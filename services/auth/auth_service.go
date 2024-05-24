@@ -97,7 +97,7 @@ func CheckAndCreateUser(user *models.User, userInfo map[string]interface{}) erro
 	if err := userhelper.SearchByEmail(user); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// create a new user
-			err = userhelper.CreateUser(user)
+			err = userhelper.Create(user)
 			if err != nil {
 				return fmt.Errorf("failed to create user")
 			}

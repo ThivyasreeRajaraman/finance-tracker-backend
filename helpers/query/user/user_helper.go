@@ -1,17 +1,18 @@
 package userhelper
 
 import (
+	dbhelper "github.com/Thivyasree-Rajaraman/finance-tracker/helpers/query/common"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/initializers"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/models"
 	"github.com/dgrijalva/jwt-go"
 )
 
-func CreateUser(user *models.User) error {
-	return initializers.DB.Create(&user).Error
+func Create(user *models.User) error {
+	return dbhelper.GenericCreate(user)
 }
 
 func Update(user *models.User) error {
-	return initializers.DB.Save(user).Error
+	return dbhelper.GenericUpdate(user)
 }
 
 func SearchByEmail(user *models.User) error {
