@@ -15,7 +15,7 @@ build:
 
 # Run tests
 test:
-	go test ./controllers/user
+	ginkgo -r
 
 # Run golangci-lint
 lint:
