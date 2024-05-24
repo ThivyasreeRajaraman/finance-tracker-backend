@@ -27,7 +27,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 		if err := authenticateUserByToken(c, token); err != nil {
-			utils.HandleError(c, http.StatusUnauthorized, "Invalid token claims", err)
+			utils.HandleError(c, http.StatusUnauthorized, "User unauthorized", err)
 			c.Abort()
 			return
 		}
