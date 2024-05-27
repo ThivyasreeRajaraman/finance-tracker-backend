@@ -11,3 +11,7 @@ func GenericCreate[T any](model *T) error {
 func GenericUpdate[T any](model *T) error {
 	return initializers.DB.Save(model).Error
 }
+
+func GenericDelete[T any](model *T) error {
+	return initializers.DB.Delete(&model).Error
+}
