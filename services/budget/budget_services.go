@@ -81,7 +81,7 @@ func CreateBudgets(c *gin.Context, budgetData []helpers.BudgetData, userID uint)
 }
 
 func Create(c *gin.Context, budget *models.Budgets) error {
-	if err := budgethelpers.Create(budget); err != nil {
+	if err := dbhelper.GenericCreate(budget); err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to create budget", err)
 		return err
 	}
