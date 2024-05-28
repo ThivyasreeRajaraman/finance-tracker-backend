@@ -8,7 +8,6 @@ type Budgets struct {
 	User       User       `gorm:"foreignkey:UserID;association_foreignkey:UserID"`
 	CategoryID uint       `json:"category_id"`
 	Category   Categories `gorm:"foreignkey:CategoryID;association_foreignkey:CategoryID"`
-	Amount     int        `json:"amount"`
-	Threshold  int        `json:"threshold"`
-	Active     bool       `json:"active"`
+	Amount     uint       `json:"amount"`
+	Threshold  uint       `json:"threshold"`
 }

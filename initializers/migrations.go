@@ -16,4 +16,8 @@ func SyncDatabase() {
 	if err != nil {
 		log.Fatalf("Error migrating database: %v", err)
 	}
+
+	if err := models.MigrateCategories(DB); err != nil {
+		log.Fatalf("Error migrating categories table: %v", err)
+	}
 }
