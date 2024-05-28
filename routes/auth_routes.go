@@ -1,7 +1,7 @@
 package routes
 
 import (
-	controllers "github.com/Thivyasree-Rajaraman/finance-tracker/controllers/auth_controller"
+	controllers "github.com/Thivyasree-Rajaraman/finance-tracker/controllers/auth"
 	"github.com/gin-gonic/gin"
 )
 

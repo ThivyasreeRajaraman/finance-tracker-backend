@@ -51,8 +51,8 @@ func UnmarshalAndValidateSingleEntity(c *gin.Context, budgetData *helpers.Budget
 	return nil
 }
 
-func GetOrCreateCategory(c *gin.Context, userID uint, categoryName *string) (*models.Categories, error) {
-	category, err := categoryhelpers.GetOrCreateCategory(userID, categoryName, "budget")
+func GetOrCreateCategory(c *gin.Context, userID uint, categoryName *string, transactionType string) (*models.Categories, error) {
+	category, err := categoryhelpers.GetOrCreateCategory(userID, categoryName, transactionType)
 	if err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to get or create category", err)
 		return nil, err
@@ -62,7 +62,7 @@ func GetOrCreateCategory(c *gin.Context, userID uint, categoryName *string) (*mo
 
 func CreateBudgets(c *gin.Context, budgetData []helpers.BudgetData, userID uint) error {
 	for _, data := range budgetData {
-		category, err := GetOrCreateCategory(c, userID, data.CategoryName)
+		category, err := GetOrCreateCategory(c, userID, data.CategoryName, "budget")
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func Update(c *gin.Context, existingBudget *models.Budgets, budgetData helpers.B
 
 	var category *models.Categories
 	if budgetData.CategoryName != nil {
-		category, err = GetOrCreateCategory(c, userID, budgetData.CategoryName)
+		category, err = GetOrCreateCategory(c, userID, budgetData.CategoryName, "budget")
 		if err != nil {
 			return err
 		}
@@ -161,4 +161,18 @@ func Delete(c *gin.Context, existingBudget *models.Budgets) error {
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "error": "Budget deleted successfully"})
 	return nil
+}
+
+func GetBudgetFromPathParam(c *gin.Context) (*models.Budgets, error) {
+	budgetID, err := utils.ParseUintParam(c, "budgetId")
+	if err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Invalid budget id", err)
+		return nil, err
+	}
+	var existingBudget models.Budgets
+	if err := FetchBudgetById(c, &existingBudget, budgetID); err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch budget", err)
+		return nil, err
+	}
+	return &existingBudget, nil
 }

@@ -65,34 +65,29 @@ func (controller *BudgetController) Fetch(c *gin.Context, createdSuccessfully bo
 }
 
 func (controller *BudgetController) Update(c *gin.Context) {
+	existingBudget, err := budgetservices.GetBudgetFromPathParam(c)
+	if err != nil {
+		return
+	}
 	var budgetData helpers.BudgetData
 	if err := budgetservices.UnmarshalAndValidateSingleEntity(c, &budgetData); err != nil {
 		utils.HandleError(c, http.StatusBadRequest, "Failed to unmarshal request body", err)
 		return
 	}
 
-	existingBudgetInterface, _ := c.Get("existingBudget")
-	existingBudget, ok := existingBudgetInterface.(models.Budgets)
-	if !ok {
-		utils.HandleError(c, http.StatusInternalServerError, "Failed to get existing budgettt", nil)
-		return
-	}
-
-	if err := budgetservices.Update(c, &existingBudget, budgetData); err != nil {
+	if err := budgetservices.Update(c, existingBudget, budgetData); err != nil {
 		return
 	}
 }
 
 func (controller *BudgetController) Delete(c *gin.Context) {
-	existingBudgetInterface, _ := c.Get("existingBudget")
-	existingBudget, ok := existingBudgetInterface.(models.Budgets)
-	if !ok {
-		utils.HandleError(c, http.StatusInternalServerError, "Failed to get existing budget", nil)
+	existingBudget, err := budgetservices.GetBudgetFromPathParam(c)
+	if err != nil {
 		return
 	}
 
 	// Soft delete the transaction
-	if err := budgetservices.Delete(c, &existingBudget); err != nil {
+	if err := budgetservices.Delete(c, existingBudget); err != nil {
 		return
 	}
 }
