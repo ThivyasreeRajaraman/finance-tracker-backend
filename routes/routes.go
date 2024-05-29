@@ -10,4 +10,7 @@ func SetupRoutes(r *gin.Engine) {
 	protected := r.Group("/api")
 	protected.Use(middleware.AuthMiddleware())
 	SetupUserRoutes(protected)
+	SetupBudgetRoutes(protected)
+	SetupTransactionRoutes(protected)
+	SetupTransactionPartnerRoutes(protected)
 }
