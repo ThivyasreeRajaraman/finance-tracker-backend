@@ -78,7 +78,7 @@ func CreateTransaction(c *gin.Context, transactionData helpers.TransactionData, 
 			return utils.CreateError("Failed to get transaction partner")
 		}
 		transaction.TransactionPartnerID = &partner.ID
-		if err := transactionpartnerhelper.UpdateTransactionPartnerAmount(*transaction.TransactionPartnerID, transactionData.TransactionType, transactionData.Amount, *transactionData.PaymentDueDate); err != nil {
+		if err := transactionpartnerhelper.UpdateTransactionPartnerAmount(*transaction.TransactionPartnerID, transactionData.TransactionType, transactionData.Amount, transactionData.PaymentDueDate); err != nil {
 			return err
 		}
 
@@ -151,10 +151,15 @@ func Update(c *gin.Context, existingTransaction *models.Transaction, transaction
 		return err
 	}
 	var category *models.Categories
+	if existingTransaction.TransactionType != "income" && existingTransaction.TransactionType != "expense" {
+		utils.HandleError(c, http.StatusInternalServerError, "Only income/expense transactions can be updated", err)
+		return err
+	}
 	if transactionData.CategoryName != nil {
 		category, err = categoryhelpers.GetOrCreateCategory(userID, transactionData.CategoryName, existingTransaction.TransactionType)
 		if err != nil {
-			return utils.CreateError("Failed to get or create category")
+			utils.HandleError(c, http.StatusInternalServerError, "Failed to get or create category", err)
+			return err
 		}
 	} else {
 		category = &models.Categories{Model: gorm.Model{ID: 0}}
@@ -177,9 +182,28 @@ func GetTransactionFromPathParam(c *gin.Context) (*models.Transaction, error) {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch budget", err)
 		return nil, err
 	}
-	if existingTransaction.TransactionType != "income" && existingTransaction.TransactionType != "expense" {
-		utils.HandleError(c, http.StatusInternalServerError, "Only income/expense transactions can be updated", err)
-		return nil, err
-	}
+
 	return &existingTransaction, nil
+}
+
+func Delete(c *gin.Context, transaction *models.Transaction) error {
+
+	if transaction.TransactionType == "lend" || transaction.TransactionType == "borrow" {
+		var targetType string
+		if transaction.TransactionType == "lend" {
+			targetType = "borrow"
+		} else {
+			targetType = "lend"
+		}
+		if err := transactionpartnerhelper.UpdateTransactionPartnerAmount(*transaction.TransactionPartnerID, targetType, transaction.Amount, nil); err != nil {
+			return err
+		}
+	}
+
+	if err := dbhelper.GenericDelete(transaction); err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to delete transaction", err)
+		return err
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Transaction deleted successfully"})
+	return nil
 }

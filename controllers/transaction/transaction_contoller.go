@@ -9,7 +9,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Create(c *gin.Context) {
+type TransactionController struct{}
+
+type TransactionControllerInterface interface {
+	Create(c *gin.Context)
+	Update(c *gin.Context)
+	Delete(c *gin.Context)
+}
+
+func GetTransactionControllerInstance() TransactionControllerInterface {
+	return new(TransactionController)
+}
+
+func (controller *TransactionController) Create(c *gin.Context) {
 	userID, err := utils.GetUserID(c)
 	if err != nil {
 		return
@@ -27,7 +39,7 @@ func Create(c *gin.Context) {
 	}
 }
 
-func Update(c *gin.Context) {
+func (controller *TransactionController) Update(c *gin.Context) {
 	existingTransaction, err := transactionservices.GetTransactionFromPathParam(c)
 	if err != nil {
 		return
@@ -41,5 +53,15 @@ func Update(c *gin.Context) {
 	if err := transactionservices.Update(c, existingTransaction, transactionData); err != nil {
 		return
 	}
+}
 
+func (controller *TransactionController) Delete(c *gin.Context) {
+	existingTransaction, err := transactionservices.GetTransactionFromPathParam(c)
+	if err != nil {
+		return
+	}
+	// Soft delete the transaction
+	if err := transactionservices.Delete(c, existingTransaction); err != nil {
+		return
+	}
 }
