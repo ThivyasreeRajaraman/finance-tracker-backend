@@ -11,13 +11,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UpdateTransactionPartnerAmount(id uint, transactionType string, amount uint, duedate time.Time) error {
+func UpdateTransactionPartnerAmount(id uint, transactionType string, amount uint, duedate *time.Time) error {
 	var partner models.TransactionPartner
 	if err := initializers.DB.Where("id = ?", id).First(&partner).Error; err != nil {
 		return utils.CreateError("Failed to find partner")
 	}
 	// Update the ClosingBalance based on the transaction type
-	partner.DueDate = duedate
+	if duedate != nil {
+		partner.DueDate = *duedate
+	}
 	switch transactionType {
 	case "lend":
 		partner.ClosingBalance -= int(amount) // negative closing balance for lend

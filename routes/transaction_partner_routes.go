@@ -6,6 +6,7 @@ import (
 )
 
 func SetupTransactionPartnerRoutes(router *gin.RouterGroup) {
-	router.POST("/user/transactionpartner", transactionpartnercontrollers.FetchOrCreate)
-	router.GET("/user/transactionpartner", transactionpartnercontrollers.Fetch)
+	controller := transactionpartnercontrollers.GetPartnerControllerInstance()
+	router.POST("/user/transactionpartner", controller.FetchOrCreate)
+	router.GET("/user/transactionpartner", controller.Fetch)
 }

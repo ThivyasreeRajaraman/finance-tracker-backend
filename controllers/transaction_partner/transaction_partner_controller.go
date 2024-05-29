@@ -10,7 +10,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func FetchOrCreate(c *gin.Context) {
+type PartnerController struct{}
+
+type PartnerControllerInterface interface {
+	FetchOrCreate(c *gin.Context)
+	Fetch(c *gin.Context)
+}
+
+func GetPartnerControllerInstance() PartnerControllerInterface {
+	return new(PartnerController)
+}
+
+func (controller *PartnerController) FetchOrCreate(c *gin.Context) {
 	userID, err := utils.GetUserID(c)
 	if err != nil {
 		return
@@ -31,7 +42,7 @@ func FetchOrCreate(c *gin.Context) {
 	utils.SendResponse(c, "Transaction partner fetched/created successfully", "transaction_partner", partner)
 }
 
-func Fetch(c *gin.Context) {
+func (controller *PartnerController) Fetch(c *gin.Context) {
 
 	var partners []models.TransactionPartner
 	if err := transactionpartnerservice.Fetch(c, &partners); err != nil {
