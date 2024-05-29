@@ -139,7 +139,6 @@ func Update(c *gin.Context, existingBudget *models.Budgets, budgetData helpers.B
 	if err != nil {
 		return err
 	}
-
 	var category *models.Categories
 	if budgetData.CategoryName != nil {
 		category, err = GetOrCreateCategory(c, userID, budgetData.CategoryName, "budget")
@@ -159,7 +158,7 @@ func Delete(c *gin.Context, existingBudget *models.Budgets) error {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to delete budget", err)
 		return err
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "error": "Budget deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Budget deleted successfully"})
 	return nil
 }
 

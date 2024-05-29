@@ -73,3 +73,10 @@ func ParseUintParam(c *gin.Context, paramName string) (uint, error) {
 	}
 	return uint(paramUint), nil
 }
+
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}

@@ -27,3 +27,49 @@ func CreateBudgetResponse(budgets []models.Budgets) ([]helpers.BudgetResponse, e
 	}
 	return budgetResponses, nil
 }
+
+func CreateTransactionResponse(transaction models.Transaction) (helpers.TransactionResponse, error) {
+
+	var defaultCurrency string
+	var categoryID uint
+	if transaction.CategoryID != nil {
+		categoryID = *transaction.CategoryID
+	}
+	if transaction.User.DefaultCurrency != nil {
+		defaultCurrency = *transaction.User.DefaultCurrency
+	}
+	transactionResponse := helpers.TransactionResponse{
+		ID:                 transaction.ID,
+		UserID:             transaction.UserID,
+		Name:               transaction.User.Name,
+		DefaultCurrency:    defaultCurrency,
+		CategoryID:         &categoryID,
+		CategoryName:       &transaction.Category.Name,
+		Amount:             transaction.Amount,
+		TransactionType:    transaction.TransactionType,
+		TransactionPartner: &transaction.TransactionPartner.PartnerName,
+	}
+	return transactionResponse, nil
+}
+
+func CreatePartnerResponse(partners []models.TransactionPartner) ([]helpers.TransactionPartnerResponse, error) {
+	partnerResponses := make([]helpers.TransactionPartnerResponse, 0)
+	for _, partner := range partners {
+		var transaction string
+		if partner.ClosingBalance > 0 {
+			transaction = "Borrowed"
+		} else if partner.ClosingBalance < 0 {
+			transaction = "Lent"
+		} else {
+			transaction = "Nil"
+		}
+		partnerResponse := helpers.TransactionPartnerResponse{
+			PartnerName:     partner.PartnerName,
+			Amount:          abs(partner.ClosingBalance),
+			TransactionType: transaction,
+			DueDate:         partner.DueDate,
+		}
+		partnerResponses = append(partnerResponses, partnerResponse)
+	}
+	return partnerResponses, nil
+}
