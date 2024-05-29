@@ -60,28 +60,13 @@ func CreateTransaction(c *gin.Context, transactionData helpers.TransactionData, 
 
 	switch transactionData.TransactionType {
 	case "income", "expense":
-		if transactionData.CategoryName == nil || *transactionData.CategoryName == "" {
-			return utils.CreateError("Category name is required for income/expense transactions")
+		if err := transactionhelpers.HandleIncomeExpenseTransaction(userID, &transaction, transactionData); err != nil {
+			return err
 		}
-		category, err := categoryhelpers.GetOrCreateCategory(userID, transactionData.CategoryName, transactionData.TransactionType)
-		if err != nil {
-			return utils.CreateError("Failed to get or create category")
-		}
-		transaction.CategoryID = &category.ID
-
 	case "lend", "borrow":
-		if err := utils.ValidateLendBorrowData(transactionData); err != nil {
+		if err := transactionhelpers.HandleLendBorrowTransaction(userID, &transaction, transactionData); err != nil {
 			return err
 		}
-		partner, err := transactionpartnerhelper.Fetch(userID, transactionData.TransactionPartner)
-		if err != nil {
-			return utils.CreateError("Failed to get transaction partner")
-		}
-		transaction.TransactionPartnerID = &partner.ID
-		if err := transactionpartnerhelper.UpdateTransactionPartnerAmount(*transaction.TransactionPartnerID, transactionData.TransactionType, transactionData.Amount, transactionData.PaymentDueDate); err != nil {
-			return err
-		}
-
 	default:
 		return utils.CreateError("Invalid transaction type")
 	}
@@ -89,23 +74,7 @@ func CreateTransaction(c *gin.Context, transactionData helpers.TransactionData, 
 	if err := dbhelper.GenericCreate(&transaction); err != nil {
 		return err
 	}
-	if err := Fetch(c, &transaction); err != nil {
-		return utils.CreateError("Failed to create transaction")
-	}
-	return nil
-}
-
-func Fetch(c *gin.Context, transaction *models.Transaction) error {
-	if err := transactionhelpers.Fetch(c, transaction); err != nil {
-		return err
-	}
-	transactionResponses, err := utils.CreateTransactionResponse(*transaction)
-	if err != nil {
-		utils.HandleError(c, http.StatusInternalServerError, "Failed to construct transaction response", err)
-		return err
-	}
-
-	utils.SendResponse(c, "Transaction created successfully", "transaction", transactionResponses)
+	utils.SendResponse(c, "Transaction created successfully", "transaction", transaction)
 	return nil
 }
 

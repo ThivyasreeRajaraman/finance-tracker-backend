@@ -36,9 +36,10 @@ func GetOrCreatePartner(userID uint, partnerName *string) ([]helpers.Transaction
 	return partnerResponse, nil
 }
 
-func Fetch(c *gin.Context, partners *[]models.TransactionPartner) error {
-	if err := transactionpartnerhelper.FetchAll(c, partners); err != nil {
-		return err
+func Fetch(c *gin.Context) ([]models.TransactionPartner, error) {
+	var partners []models.TransactionPartner
+	if err := transactionpartnerhelper.FetchAll(c, &partners); err != nil {
+		return nil, err
 	}
-	return nil
+	return partners, nil
 }

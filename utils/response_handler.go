@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"math"
+
 	"net/http"
 	"strconv"
 
@@ -70,7 +72,7 @@ func CreatePartnerResponse(partners []models.TransactionPartner) ([]helpers.Tran
 		}
 		partnerResponse := helpers.TransactionPartnerResponse{
 			PartnerName:     partner.PartnerName,
-			Amount:          abs(partner.ClosingBalance),
+			Amount:          uint(math.Abs(float64(partner.ClosingBalance))),
 			TransactionType: transaction,
 			DueDate:         partner.DueDate,
 		}
