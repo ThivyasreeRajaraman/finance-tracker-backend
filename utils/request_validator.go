@@ -29,6 +29,7 @@ func IsValidFrequency(frequency string) error {
 	}
 	return nil
 }
+
 func ValidateLendBorrowData(transactionData helpers.TransactionData) error {
 	if transactionData.TransactionPartner == nil || *transactionData.TransactionPartner == "" {
 		return CreateError("Transaction partner is required for lend/borrow transactions")
