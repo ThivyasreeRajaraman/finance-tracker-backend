@@ -1,0 +1,15 @@
+package routes
+
+import (
+	recurringexpensecontrollers "github.com/Thivyasree-Rajaraman/finance-tracker/controllers/recurring_expense"
+	"github.com/gin-gonic/gin"
+)
+
+func SetupRecurringExpenseRoutes(router *gin.RouterGroup) {
+	// router.PUT("/user/recurringExpense", recurringexpensecontrollers.Create)
+	controller := recurringexpensecontrollers.GetRecurringExpenseControllerInstance()
+	router.POST("/user/recurringExpense", controller.Create)
+	router.PUT("/user/recurringExpense/:recurringExpenseId", controller.Update)
+	router.DELETE("/user/recurringExpense/:recurringExpenseId", controller.Delete)
+	router.GET("/user/recurringExpense", controller.Fetch)
+}

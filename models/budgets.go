@@ -11,3 +11,12 @@ type Budgets struct {
 	Amount     uint       `json:"amount"`
 	Threshold  uint       `json:"threshold"`
 }
+
+func MigrateBudgets(db *gorm.DB) error {
+	if !db.Migrator().HasIndex(&Budgets{}, "idx_caytegory_user_id") {
+		if err := db.Exec("CREATE UNIQUE INDEX idx_caytegory_user_id ON budgets (category_id, user_id) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}

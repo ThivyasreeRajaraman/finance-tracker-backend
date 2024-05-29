@@ -12,6 +12,7 @@ func SyncDatabase() {
 		&models.Categories{},
 		&models.Budgets{},
 		&models.Transaction{},
+		&models.RecurringExpense{},
 	)
 	if err != nil {
 		log.Fatalf("Error migrating database: %v", err)
@@ -19,5 +20,11 @@ func SyncDatabase() {
 
 	if err := models.MigrateCategories(DB); err != nil {
 		log.Fatalf("Error migrating categories table: %v", err)
+	}
+	if err := models.MigrateRecurringExpense(DB); err != nil {
+		log.Fatalf("Error migrating recurring expense table: %v", err)
+	}
+	if err := models.MigrateBudgets(DB); err != nil {
+		log.Fatalf("Error migrating budgets table: %v", err)
 	}
 }

@@ -11,4 +11,5 @@ func SetupRoutes(r *gin.Engine) {
 	protected.Use(middleware.AuthMiddleware())
 	SetupUserRoutes(protected)
 	SetupBudgetRoutes(protected)
+	SetupRecurringExpenseRoutes(protected)
 }
