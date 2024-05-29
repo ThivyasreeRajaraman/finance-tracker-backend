@@ -9,8 +9,8 @@ type UpdateUserRequest struct {
 
 type BudgetData struct {
 	CategoryName *string `json:"category_name"`
-	Amount       *int    `json:"amount"`
-	Threshold    *int    `json:"threshold"`
+	Amount       *uint   `json:"amount"`
+	Threshold    *uint   `json:"threshold"`
 }
 
 type BudgetResponse struct {
@@ -21,8 +21,8 @@ type BudgetResponse struct {
 	DefaultCurrency string `json:"default_currency"`
 	CategoryID      uint   `json:"category_id"`
 	CategoryName    string `json:"category_name"`
-	Amount          int    `json:"amount"`
-	Threshold       int    `json:"threshold"`
+	Amount          uint   `json:"amount"`
+	Threshold       uint   `json:"threshold"`
 }
 
 type TransactionData struct {
