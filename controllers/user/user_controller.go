@@ -1,4 +1,4 @@
-package controllers
+package usercontrollers
 
 import (
 	"net/http"
@@ -26,5 +26,5 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "User updated successfully", "user": user})
+	utils.SendResponse(c, "User updated successfully", "user", user)
 }
