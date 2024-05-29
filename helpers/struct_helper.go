@@ -1,5 +1,7 @@
 package helpers
 
+import "time"
+
 type UpdateUserRequest struct {
 	DefaultCurrency string `json:"default_currency"`
 	Name            string `json:"name"`
@@ -21,4 +23,18 @@ type BudgetResponse struct {
 	CategoryName    string `json:"category_name"`
 	Amount          uint   `json:"amount"`
 	Threshold       uint   `json:"threshold"`
+}
+
+type RecurringExpenseData struct {
+	CategoryName    string    `json:"category_name"`
+	Amount          uint      `json:"amount"`
+	Frequency       string    `json:"frequency"`
+	NextExpenseDate time.Time `json:"due_date" gorm:"type:date"`
+}
+
+type UpdateRecurringExpenseData struct {
+	CategoryName    *string    `json:"category_name"`
+	Amount          *uint      `json:"amount"`
+	Frequency       *string    `json:"frequency"`
+	NextExpenseDate *time.Time `json:"due_date"`
 }
