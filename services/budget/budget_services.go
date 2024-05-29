@@ -159,7 +159,7 @@ func Delete(c *gin.Context, existingBudget *models.Budgets) error {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to delete budget", err)
 		return err
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "error": "Budget deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Budget deleted successfully"})
 	return nil
 }
 
