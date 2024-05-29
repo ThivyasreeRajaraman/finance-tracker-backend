@@ -37,6 +37,13 @@ var validCurrencies = map[string]bool{
 	"ZAR": true,
 }
 
+var validTransactionTypes = map[string]bool{
+	"income":  true,
+	"expense": true,
+	"lend":    true,
+	"borrow":  true,
+}
+
 var validFrequencies = map[string]bool{
 	"WEEKLY":  true,
 	"MONTHLY": true,
