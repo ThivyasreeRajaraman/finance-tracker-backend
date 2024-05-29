@@ -1,14 +1,21 @@
 package utils
 
 import (
-	"errors"
 	"strings"
 )
 
 func IsValidCurrency(currency string) error {
 	normalizedCurrency := strings.ToUpper(currency)
 	if _, ok := validCurrencies[normalizedCurrency]; !ok {
-		return errors.New("invalid currency code")
+		return CreateError("invalid currency code")
+	}
+	return nil
+}
+
+func IsValidFrequency(frequency string) error {
+	normalizedFrequency := strings.ToUpper(frequency)
+	if _, ok := validFrequencies[normalizedFrequency]; !ok {
+		return CreateError("invalid frequency")
 	}
 	return nil
 }

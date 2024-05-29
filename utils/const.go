@@ -36,3 +36,9 @@ var validCurrencies = map[string]bool{
 	"TRY": true,
 	"ZAR": true,
 }
+
+var validFrequencies = map[string]bool{
+	"WEEKLY":  true,
+	"MONTHLY": true,
+	"YEARLY":  true,
+}
