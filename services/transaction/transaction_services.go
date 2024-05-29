@@ -135,7 +135,7 @@ func UpdateExistingTransaction(c *gin.Context, existingTransaction *models.Trans
 		existingTransaction.TransactionType = *transactionData.TransactionType
 	}
 	if err := dbhelper.GenericUpdate(existingTransaction); err != nil {
-		utils.HandleError(c, http.StatusInternalServerError, "Failed to update budget", err)
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to update transaction", err)
 		return err
 	}
 	if err := preloadTransactionAssociations(c, existingTransaction); err != nil {
@@ -179,7 +179,7 @@ func GetTransactionFromPathParam(c *gin.Context) (*models.Transaction, error) {
 	}
 	var existingTransaction models.Transaction
 	if err := FetchTransactionById(c, &existingTransaction, transactionId); err != nil {
-		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch budget", err)
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch transaction", err)
 		return nil, err
 	}
 
