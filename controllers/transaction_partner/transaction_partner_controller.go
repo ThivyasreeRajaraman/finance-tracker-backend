@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
-	"github.com/Thivyasree-Rajaraman/finance-tracker/models"
 	transactionpartnerservice "github.com/Thivyasree-Rajaraman/finance-tracker/services/transaction_partner"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/utils"
 	"github.com/gin-gonic/gin"
@@ -44,8 +43,8 @@ func (controller *PartnerController) FetchOrCreate(c *gin.Context) {
 
 func (controller *PartnerController) Fetch(c *gin.Context) {
 
-	var partners []models.TransactionPartner
-	if err := transactionpartnerservice.Fetch(c, &partners); err != nil {
+	partners, err := transactionpartnerservice.Fetch(c)
+	if err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch partners", err)
 	}
 	partnerResponses, err := utils.CreatePartnerResponse(partners)

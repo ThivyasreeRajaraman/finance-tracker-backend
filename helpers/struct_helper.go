@@ -58,7 +58,7 @@ type TransactionPartnerData struct {
 
 type TransactionPartnerResponse struct {
 	PartnerName     string    `json:"partner_name"`
-	Amount          int       `json:"amount"`
+	Amount          uint      `json:"amount"`
 	TransactionType string    `json:"transaction_type"`
 	DueDate         time.Time `json:"payment_due_date" gorm:"type:date"`
 }
