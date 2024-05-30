@@ -7,4 +7,5 @@ import (
 
 func SetupUserRoutes(router *gin.RouterGroup) {
 	router.PUT("/user", usercontrollers.Update)
+	router.GET("/currencies", usercontrollers.FetchCurrencies)
 }
