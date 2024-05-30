@@ -74,7 +74,14 @@ func CreateTransaction(c *gin.Context, transactionData helpers.TransactionData, 
 	if err := dbhelper.GenericCreate(&transaction); err != nil {
 		return err
 	}
-	utils.SendResponse(c, "Transaction created successfully", "transaction", transaction)
+	if err := preloadTransactionAssociations(c, &transaction); err != nil {
+		return err
+	}
+	transactionResponse, err := utils.CreateTransactionResponse(transaction)
+	if err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to construct transaction response", err)
+	}
+	utils.SendResponse(c, "Transaction created successfully", "transaction", transactionResponse)
 	return nil
 }
 
@@ -86,7 +93,7 @@ func FetchTransactionById(c *gin.Context, transaction *models.Transaction, trans
 }
 
 func preloadTransactionAssociations(c *gin.Context, transaction *models.Transaction) error {
-	if err := initializers.DB.Preload("Category").Preload("User").First(transaction, transaction.ID).Error; err != nil {
+	if err := initializers.DB.Preload("Category").Preload("User").Preload("TransactionPartner").First(transaction, transaction.ID).Error; err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to preload user and category association", err)
 		return err
 	}
@@ -110,7 +117,11 @@ func UpdateExistingTransaction(c *gin.Context, existingTransaction *models.Trans
 	if err := preloadTransactionAssociations(c, existingTransaction); err != nil {
 		return err
 	}
-	utils.SendResponse(c, "Transaction updated successfully", "transaction", existingTransaction)
+	transactionResponse, err := utils.CreateTransactionResponse(*existingTransaction)
+	if err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to construct transaction response", err)
+	}
+	utils.SendResponse(c, "Transaction updated successfully", "transaction", transactionResponse)
 	return nil
 }
 
