@@ -67,12 +67,12 @@ type RecurringExpenseData struct {
 	CategoryName    string    `json:"category_name"`
 	Amount          uint      `json:"amount"`
 	Frequency       string    `json:"frequency"`
-	NextExpenseDate time.Time `json:"due_date" gorm:"type:date"`
+	NextExpenseDate time.Time `json:"next_expense_date" gorm:"type:date"`
 }
 
 type UpdateRecurringExpenseData struct {
 	CategoryName    *string    `json:"category_name"`
 	Amount          *uint      `json:"amount"`
 	Frequency       *string    `json:"frequency"`
-	NextExpenseDate *time.Time `json:"due_date"`
+	NextExpenseDate *time.Time `json:"next_expense_date"`
 }
