@@ -192,7 +192,7 @@ func SendRecurringExpenseReminders(c *gin.Context) {
 		if daysUntilExpense <= 5 {
 			sendRecurringExpenseReminder(c, expense, daysUntilExpense)
 		}
-
+		// if expense.NextExpenseDate.AddDate(0, 0, 1).Format("2006-01-02") == time.Now().Format("2006-01-02")
 		if expense.NextExpenseDate.Format("2006-01-02") == time.Now().Format("2006-01-02") {
 			switch expense.Frequency {
 			case "MONTHLY":

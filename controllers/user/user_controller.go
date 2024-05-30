@@ -38,3 +38,17 @@ func FetchCurrencies(c *gin.Context) {
 	sort.Strings(currencies)
 	c.JSON(http.StatusOK, gin.H{"currencies": currencies})
 }
+
+func Fetch(c *gin.Context) {
+	userID, err := utils.GetUserID(c)
+	if err != nil {
+		return
+	}
+	userModel := new(models.User)
+	conditions := map[string]interface{}{
+		"id": userID,
+	}
+	if data := utils.List(c, userModel, conditions); data != nil {
+		return
+	}
+}
