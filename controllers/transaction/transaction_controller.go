@@ -2,6 +2,7 @@ package transactioncontrollers
 
 import (
 	"net/http"
+	"sort"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
 	transactionservices "github.com/Thivyasree-Rajaraman/finance-tracker/services/transaction"
@@ -15,6 +16,7 @@ type TransactionControllerInterface interface {
 	Create(c *gin.Context)
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
+	FetchTransactionTypes(c *gin.Context)
 }
 
 func GetTransactionControllerInstance() TransactionControllerInterface {
@@ -64,4 +66,13 @@ func (controller *TransactionController) Delete(c *gin.Context) {
 	if err := transactionservices.Delete(c, existingTransaction); err != nil {
 		return
 	}
+}
+
+func (controller *TransactionController) FetchTransactionTypes(c *gin.Context) {
+	transactionTypes := make([]string, 0, len(utils.ValidTransactionTypes))
+	for transactionType := range utils.ValidTransactionTypes {
+		transactionTypes = append(transactionTypes, transactionType)
+	}
+	sort.Strings(transactionTypes)
+	c.JSON(http.StatusOK, gin.H{"transaction_types": transactionTypes})
 }

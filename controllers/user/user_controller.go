@@ -2,6 +2,7 @@ package usercontrollers
 
 import (
 	"net/http"
+	"sort"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/models"
 	userservices "github.com/Thivyasree-Rajaraman/finance-tracker/services/user"
@@ -27,4 +28,13 @@ func Update(c *gin.Context) {
 	}
 
 	utils.SendResponse(c, "User updated successfully", "user", user)
+}
+
+func FetchCurrencies(c *gin.Context) {
+	currencies := make([]string, 0, len(utils.ValidCurrencies))
+	for currency := range utils.ValidCurrencies {
+		currencies = append(currencies, currency)
+	}
+	sort.Strings(currencies)
+	c.JSON(http.StatusOK, gin.H{"currencies": currencies})
 }

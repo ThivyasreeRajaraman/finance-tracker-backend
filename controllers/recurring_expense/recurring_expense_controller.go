@@ -2,6 +2,7 @@ package recurringexpensecontrollers
 
 import (
 	"net/http"
+	"sort"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/models"
@@ -17,6 +18,8 @@ type RecurringExpenseControllerInterface interface {
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
 	Fetch(c *gin.Context)
+	Remind(c *gin.Context)
+	FetchFrequencies(c *gin.Context)
 }
 
 func GetRecurringExpenseControllerInstance() RecurringExpenseControllerInterface {
@@ -72,4 +75,17 @@ func (controller *RecurringExpenseController) Fetch(c *gin.Context) {
 	if data := utils.List(c, recurringExpenseModel, conditions); data != nil {
 		return
 	}
+}
+
+func (controller *RecurringExpenseController) Remind(c *gin.Context) {
+	recurringexpenseservices.SendRecurringExpenseReminders(c)
+}
+
+func (controller *RecurringExpenseController) FetchFrequencies(c *gin.Context) {
+	frequencies := make([]string, 0, len(utils.ValidFrequencies))
+	for frequency := range utils.ValidFrequencies {
+		frequencies = append(frequencies, frequency)
+	}
+	sort.Strings(frequencies)
+	c.JSON(http.StatusOK, gin.H{"frequencies": frequencies})
 }
