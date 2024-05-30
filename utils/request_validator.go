@@ -9,14 +9,14 @@ import (
 
 func IsValidCurrency(currency string) error {
 	normalizedCurrency := strings.ToUpper(currency)
-	if _, ok := validCurrencies[normalizedCurrency]; !ok {
+	if _, ok := ValidCurrencies[normalizedCurrency]; !ok {
 		return CreateError("invalid currency code")
 	}
 	return nil
 }
 
 func IsValidTransactionType(transactionType string) error {
-	if _, ok := validTransactionTypes[transactionType]; !ok {
+	if _, ok := ValidTransactionTypes[transactionType]; !ok {
 		return CreateError("invalid transaction type")
 	}
 	return nil
@@ -24,7 +24,7 @@ func IsValidTransactionType(transactionType string) error {
 
 func IsValidFrequency(frequency string) error {
 	normalizedFrequency := strings.ToUpper(frequency)
-	if _, ok := validFrequencies[normalizedFrequency]; !ok {
+	if _, ok := ValidFrequencies[normalizedFrequency]; !ok {
 		return CreateError("invalid frequency")
 	}
 	return nil
