@@ -144,16 +144,6 @@ func GetExpenseFromPathParam(c *gin.Context) (*models.RecurringExpense, error) {
 	if err := FetchById(c, &existingExpense, expenseID); err != nil {
 		return nil, err
 	}
-	// recurringExpenseModel := new(models.RecurringExpense)
-	// userID, err := utils.GetUserID(c)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// conditions := map[string]interface{}{
-	// 	"user_id": userID,
-	// 	"id":      expenseID,
-	// }
-	// utils.List(c, recurringExpenseModel, conditions)
 	return &existingExpense, nil
 }
 
@@ -192,7 +182,6 @@ func SendRecurringExpenseReminders(c *gin.Context) {
 		if daysUntilExpense <= 5 {
 			sendRecurringExpenseReminder(c, expense, daysUntilExpense)
 		}
-		// if expense.NextExpenseDate.AddDate(0, 0, 1).Format("2006-01-02") == time.Now().Format("2006-01-02")
 		if expense.NextExpenseDate.Format("2006-01-02") == time.Now().Format("2006-01-02") {
 			switch expense.Frequency {
 			case "MONTHLY":
@@ -202,7 +191,6 @@ func SendRecurringExpenseReminders(c *gin.Context) {
 			case "YEARLY":
 				expense.NextExpenseDate = expense.NextExpenseDate.AddDate(1, 0, 0)
 			}
-
 			if err := dbhelper.GenericUpdate(&expense); err != nil {
 				utils.HandleError(c, http.StatusInternalServerError, "Failed to update next expense date", err)
 				continue
