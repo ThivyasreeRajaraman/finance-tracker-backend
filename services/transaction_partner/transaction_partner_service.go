@@ -1,8 +1,15 @@
 package transactionpartnerservice
 
 import (
+	"fmt"
+	"math"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
 	transactionpartnerhelper "github.com/Thivyasree-Rajaraman/finance-tracker/helpers/query/transaction_partner"
+	"github.com/Thivyasree-Rajaraman/finance-tracker/initializers"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/models"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/utils"
 	"github.com/gin-gonic/gin"
@@ -42,4 +49,49 @@ func Fetch(c *gin.Context) ([]models.TransactionPartner, error) {
 		return nil, err
 	}
 	return partners, nil
+}
+
+func NotifyUpcomingDueDate(c *gin.Context) {
+	userID, err := utils.GetUserID(c)
+	if err != nil {
+		return
+	}
+	var upcomingLendOrBorrowTransactions []models.TransactionPartner
+	if err := initializers.DB.Model(&models.TransactionPartner{}).
+		Where("user_id = ? AND due_date BETWEEN ? AND ?", userID, time.Now(), time.Now().AddDate(0, 0, 5)).
+		Preload("User").Find(&upcomingLendOrBorrowTransactions).Error; err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch upcoming lend or borrow transactions", err)
+		return
+	}
+	var reminders []string
+	for _, transaction := range upcomingLendOrBorrowTransactions {
+		daysUntilExpense := int(time.Until(transaction.DueDate).Hours() / 24)
+		if daysUntilExpense <= 5 {
+			reminders = append(reminders, sendLendOrBorrowReminder(transaction, daysUntilExpense))
+		}
+	}
+	reminderMessage := strings.Join(reminders, "\n")
+	c.JSON(http.StatusOK, gin.H{"Reminder": reminderMessage})
+}
+
+func sendLendOrBorrowReminder(transaction models.TransactionPartner, daysUntilExpense int) string {
+	var message, transaction_type, adj string
+	fmt.Println("\n\ndata::", daysUntilExpense)
+	if transaction.ClosingBalance > 0 {
+		transaction_type = "Borrowed"
+		adj = "from"
+	} else if transaction.ClosingBalance < 0 {
+		transaction_type = "Lent"
+		adj = "to"
+	}
+
+	if daysUntilExpense == 0 {
+		message = fmt.Sprintf("The amount of %d %s you %s %s %s is due today.",
+			uint(math.Abs(float64(transaction.ClosingBalance))), *transaction.User.DefaultCurrency, transaction_type, adj, transaction.PartnerName)
+	} else {
+		fmt.Printf("data::%+v", transaction)
+		message = fmt.Sprintf("The amount of %d %s you %s %s %s is due in %d day(s).",
+			uint(math.Abs(float64(transaction.ClosingBalance))), *transaction.User.DefaultCurrency, transaction_type, adj, transaction.PartnerName, daysUntilExpense)
+	}
+	return message
 }

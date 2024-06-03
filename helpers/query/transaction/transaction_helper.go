@@ -2,6 +2,7 @@ package transactionhelpers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
 	categoryhelpers "github.com/Thivyasree-Rajaraman/finance-tracker/helpers/query/category"
@@ -54,4 +55,29 @@ func HandleLendBorrowTransaction(userID uint, transaction *models.Transaction, t
 	}
 
 	return nil
+}
+
+func CheckThreshold(c *gin.Context, transaction helpers.TransactionResponse, userID uint) string {
+	var totalAmount uint
+	var budget models.Budgets
+
+	startOfMonth := time.Now().UTC().Truncate(time.Hour*24).AddDate(0, 0, -time.Now().Day()+1)
+	endOfMonth := startOfMonth.AddDate(0, 1, -1)
+
+	if err := initializers.DB.
+		Model(&models.Transaction{}).
+		Select("SUM(amount) as totalAmount").
+		Where("user_id = ? AND category_id = ? AND transaction_type = ? AND created_at BETWEEN ? AND ?", userID, transaction.CategoryID, "expense", startOfMonth, endOfMonth).
+		Scan(&totalAmount).Error; err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to retrieve transactions", err)
+	}
+
+	err := initializers.DB.Model(&models.Budgets{}).
+		Where("user_id = ? AND category_id = ?", userID, transaction.CategoryID).First(&budget).Error
+	if err == nil {
+		if totalAmount+transaction.Amount > budget.Threshold {
+			return "Expense threshold reached for this category"
+		}
+	}
+	return ""
 }

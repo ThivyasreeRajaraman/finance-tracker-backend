@@ -14,6 +14,7 @@ type PartnerController struct{}
 type PartnerControllerInterface interface {
 	FetchOrCreate(c *gin.Context)
 	Fetch(c *gin.Context)
+	Remind(c *gin.Context)
 }
 
 func GetPartnerControllerInstance() PartnerControllerInterface {
@@ -53,4 +54,8 @@ func (controller *PartnerController) Fetch(c *gin.Context) {
 	}
 
 	utils.SendResponse(c, "Transaction partners fetched successfully", "Transaction Partners", partnerResponses)
+}
+
+func (controller *PartnerController) Remind(c *gin.Context) {
+	transactionpartnerservice.NotifyUpcomingDueDate(c)
 }

@@ -70,6 +70,7 @@ func CreateTransaction(c *gin.Context, transactionData helpers.TransactionData, 
 	default:
 		return utils.CreateError("Invalid transaction type")
 	}
+
 	// Save transaction to DB
 	if err := dbhelper.GenericCreate(&transaction); err != nil {
 		return err
@@ -81,7 +82,27 @@ func CreateTransaction(c *gin.Context, transactionData helpers.TransactionData, 
 	if err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to construct transaction response", err)
 	}
-	utils.SendResponse(c, "Transaction created successfully", "transaction", transactionResponse)
+
+	// Verify if the threshold has been reached
+	if transactionData.TransactionType == "expense" {
+		alert := transactionhelpers.CheckThreshold(c, transactionResponse, userID)
+		if alert != "" {
+			c.JSON(http.StatusOK, gin.H{
+				"success":     true,
+				"message":     "Transaction created successfully",
+				"transaction": transactionResponse,
+				"alert":       alert,
+			})
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"success":     true,
+				"message":     "Transaction created successfully",
+				"transaction": transactionResponse,
+			})
+		}
+	} else {
+		utils.SendResponse(c, "Transaction created successfully", "transaction", transactionResponse)
+	}
 	return nil
 }
 
@@ -101,6 +122,10 @@ func preloadTransactionAssociations(c *gin.Context, transaction *models.Transact
 }
 
 func UpdateExistingTransaction(c *gin.Context, existingTransaction *models.Transaction, transactionData helpers.TransactionUpdate, categoryID uint) error {
+	userID, err := utils.GetUserID(c)
+	if err != nil {
+		return err
+	}
 	if categoryID != 0 && existingTransaction.CategoryID != &categoryID {
 		existingTransaction.CategoryID = &categoryID
 	}
@@ -121,7 +146,30 @@ func UpdateExistingTransaction(c *gin.Context, existingTransaction *models.Trans
 	if err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to construct transaction response", err)
 	}
-	utils.SendResponse(c, "Transaction updated successfully", "transaction", transactionResponse)
+	if transactionData.Amount != nil {
+		if existingTransaction.TransactionType == "expense" {
+			// transactionhelpers.CheckThreshold(c, transactionResponse, userID)
+			alert := transactionhelpers.CheckThreshold(c, transactionResponse, userID)
+			if alert != "" {
+				c.JSON(http.StatusOK, gin.H{
+					"success":     true,
+					"message":     "Transaction updated successfully",
+					"transaction": transactionResponse,
+					"alert":       alert,
+				})
+			} else {
+				c.JSON(http.StatusOK, gin.H{
+					"success":     true,
+					"message":     "Transaction updated successfully",
+					"transaction": transactionResponse,
+				})
+			}
+		} else {
+			utils.SendResponse(c, "Transaction updated successfully", "transaction", transactionResponse)
+		}
+	} else {
+		utils.SendResponse(c, "Transaction updated successfully", "transaction", transactionResponse)
+	}
 	return nil
 }
 

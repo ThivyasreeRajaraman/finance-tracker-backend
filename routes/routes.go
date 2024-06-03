@@ -13,4 +13,5 @@ func SetupRoutes(r *gin.Engine) {
 	SetupBudgetRoutes(protected)
 	SetupTransactionRoutes(protected)
 	SetupTransactionPartnerRoutes(protected)
+	SetupRecurringExpenseRoutes(protected)
 }

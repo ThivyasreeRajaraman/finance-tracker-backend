@@ -62,3 +62,17 @@ type TransactionPartnerResponse struct {
 	TransactionType string    `json:"transaction_type"`
 	DueDate         time.Time `json:"payment_due_date" gorm:"type:date"`
 }
+
+type RecurringExpenseData struct {
+	CategoryName    string    `json:"category_name"`
+	Amount          uint      `json:"amount"`
+	Frequency       string    `json:"frequency"`
+	NextExpenseDate time.Time `json:"next_expense_date" gorm:"type:date"`
+}
+
+type UpdateRecurringExpenseData struct {
+	CategoryName    *string    `json:"category_name"`
+	Amount          *uint      `json:"amount"`
+	Frequency       *string    `json:"frequency"`
+	NextExpenseDate *time.Time `json:"next_expense_date"`
+}

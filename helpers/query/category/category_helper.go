@@ -1,4 +1,4 @@
-package categoryhelpers
+package categoryhelper
 
 import (
 	"strings"
@@ -20,7 +20,7 @@ func GetOrCreateCategory(userID uint, categoryName *string, transactionType stri
 	if transactionType == "budget" || transactionType == "expense" {
 		err = initializers.DB.Where("LOWER(name) = ? AND (type = ? OR type = ?) AND (user_id IS NULL OR user_id = ?)", strings.ToLower(*categoryName), transactionType, targetType, userID).First(&existingCategory).Error
 	} else {
-		// Income
+		// Income or recurringExpense
 		err = initializers.DB.Where("LOWER(name) = ? AND type = ? AND (user_id IS NULL OR user_id = ?)", strings.ToLower(*categoryName), transactionType, userID).First(&existingCategory).Error
 	}
 

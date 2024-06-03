@@ -14,7 +14,7 @@ var (
 	ErrInvalidDataType  = errors.New("invalid datatype")
 )
 
-var validCurrencies = map[string]bool{
+var ValidCurrencies = map[string]bool{
 	"INR": true,
 	"USD": true,
 	"EUR": true,
@@ -37,15 +37,15 @@ var validCurrencies = map[string]bool{
 	"ZAR": true,
 }
 
-var validTransactionTypes = map[string]bool{
+var ValidTransactionTypes = map[string]bool{
 	"income":  true,
 	"expense": true,
 	"lend":    true,
 	"borrow":  true,
 }
 
-var validFrequencyTypes = map[string]bool{
-	"Daily":   true,
-	"Weekly":  true,
-	"Monthly": true,
+var ValidFrequencies = map[string]bool{
+	"WEEKLY":  true,
+	"MONTHLY": true,
+	"YEARLY":  true,
 }
