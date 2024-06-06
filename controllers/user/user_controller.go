@@ -48,7 +48,18 @@ func Fetch(c *gin.Context) {
 	conditions := map[string]interface{}{
 		"id": userID,
 	}
-	if data := utils.List(c, userModel, conditions); data != nil {
+	if data := utils.List(c, userModel, conditions, ""); data != nil {
 		return
 	}
+}
+
+func FetchCategories(c *gin.Context) {
+	userID, err := utils.GetUserID(c)
+	if err != nil {
+		return
+	}
+	if err := userservices.FetchCategories(c, userID); err != nil {
+		return
+	}
+
 }

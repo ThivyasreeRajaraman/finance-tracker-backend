@@ -32,9 +32,6 @@ func UnmarshalAndValidate(c *gin.Context, recurringExpenseData *helpers.Recurrin
 	if recurringExpenseData.NextExpenseDate.IsZero() {
 		return utils.CreateError("Payment start date is required for recurring expense transactions")
 	}
-	if recurringExpenseData.NextExpenseDate.Before(time.Now()) {
-		return utils.CreateError("Payment start date cannot be in the past")
-	}
 	if err := utils.IsValidFrequency(recurringExpenseData.Frequency); err != nil {
 		return err
 	}
@@ -76,9 +73,6 @@ func UnmarshalAndValidateForUpdate(c *gin.Context, recurringExpenseData *helpers
 	}
 	if recurringExpenseData.Amount != nil && *recurringExpenseData.Amount <= 0 {
 		return utils.CreateError("amount must be greater than zero")
-	}
-	if recurringExpenseData.NextExpenseDate != nil && (*recurringExpenseData.NextExpenseDate).Before(time.Now()) {
-		return utils.CreateError("Payment start date cannot be in the past")
 	}
 	if recurringExpenseData.Frequency != nil {
 		if *recurringExpenseData.Frequency == "" {
