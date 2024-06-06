@@ -18,6 +18,7 @@ type RecurringExpenseControllerInterface interface {
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
 	Fetch(c *gin.Context)
+	FetchSingleEntity(c *gin.Context)
 	Remind(c *gin.Context)
 	FetchFrequencies(c *gin.Context)
 }
@@ -72,7 +73,7 @@ func (controller *RecurringExpenseController) Fetch(c *gin.Context) {
 	conditions := map[string]interface{}{
 		"user_id": userID,
 	}
-	if data := utils.List(c, recurringExpenseModel, conditions); data != nil {
+	if data := utils.List(c, recurringExpenseModel, conditions, "next_expense_date ASC"); data != nil {
 		return
 	}
 }
@@ -88,4 +89,21 @@ func (controller *RecurringExpenseController) FetchFrequencies(c *gin.Context) {
 	}
 	sort.Strings(frequencies)
 	c.JSON(http.StatusOK, gin.H{"frequencies": frequencies})
+}
+
+func (controller *RecurringExpenseController) FetchSingleEntity(c *gin.Context) {
+	existingExpense, err := recurringexpenseservices.GetExpenseFromPathParam(c)
+	if err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch expense", err)
+		return
+	}
+
+	response := helpers.RecurringExpenseResponse{
+		Category:        existingExpense.Category.Name,
+		Amount:          existingExpense.Amount,
+		Frequency:       existingExpense.Frequency,
+		NextExpenseDate: existingExpense.NextExpenseDate.Format("2006-01-02"),
+	}
+
+	utils.SendResponse(c, "Expense fetched successfully", "expense", response)
 }

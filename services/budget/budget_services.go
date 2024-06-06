@@ -54,7 +54,6 @@ func UnmarshalAndValidateSingleEntity(c *gin.Context, budgetData *helpers.Budget
 func GetOrCreateCategory(c *gin.Context, userID uint, categoryName *string, transactionType string) (*models.Categories, error) {
 	category, err := categoryhelpers.GetOrCreateCategory(userID, categoryName, transactionType)
 	if err != nil {
-		utils.HandleError(c, http.StatusInternalServerError, "Failed to get or create category", err)
 		return nil, err
 	}
 	return category, nil

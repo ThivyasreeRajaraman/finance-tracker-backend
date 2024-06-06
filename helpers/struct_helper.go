@@ -76,3 +76,10 @@ type UpdateRecurringExpenseData struct {
 	Frequency       *string    `json:"frequency"`
 	NextExpenseDate *time.Time `json:"next_expense_date"`
 }
+
+type RecurringExpenseResponse struct {
+	Category        string `json:"category"`
+	Amount          uint   `json:"amount"`
+	Frequency       string `json:"frequency"`
+	NextExpenseDate string `json:"next_expense_date"`
+}
