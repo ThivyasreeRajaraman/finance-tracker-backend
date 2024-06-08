@@ -9,8 +9,9 @@ func SetupBudgetRoutes(router *gin.RouterGroup) {
 	controller := budgetcontrollers.GetBudgetControllerInstance()
 	router.POST("/user/budget", controller.Create)
 	router.GET("/user/budget", func(c *gin.Context) {
-		controller.Fetch(c, false)
+		controller.Fetch(c)
 	})
+	router.GET("/user/budget/:budgetId", controller.UnitFetch)
 	router.PUT("/user/budget/:budgetId", controller.Update)
 	router.DELETE("/user/budget/:budgetId", controller.Delete)
 }

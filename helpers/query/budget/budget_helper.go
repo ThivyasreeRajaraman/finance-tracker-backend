@@ -28,7 +28,7 @@ func FetchByID(c *gin.Context, budget *models.Budgets, budgetID uint) error {
 		return err
 	}
 
-	if err := initializers.DB.Where("user_id = ?", userID).First(&budget, budgetID).Error; err != nil {
+	if err := initializers.DB.Preload("User").Preload("Category").Where("user_id = ?", userID).First(&budget, budgetID).Error; err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to retrieve existing budget", err)
 		return err
 	}
