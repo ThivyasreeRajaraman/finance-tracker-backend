@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UpdateTransactionPartnerAmount(id uint, transactionType string, amount uint, duedate *time.Time) error {
+func UpdateTransactionPartnerAmount(id uint, transactionType string, amount uint, duedate *string) error {
 	var partner models.TransactionPartner
 	if err := initializers.DB.Where("id = ?", id).First(&partner).Error; err != nil {
 		return utils.CreateError("Failed to find partner")
@@ -48,7 +48,7 @@ func Create(userID uint, partnerName *string) (*models.TransactionPartner, error
 	partner := models.TransactionPartner{
 		PartnerName:    *partnerName,
 		UserID:         userID,
-		DueDate:        time.Now(),
+		DueDate:        time.Now().Format("2006-01-02"),
 		ClosingBalance: 0,
 	}
 	if err := dbhelper.GenericCreate(&partner); err != nil {

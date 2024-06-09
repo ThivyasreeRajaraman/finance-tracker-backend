@@ -65,7 +65,12 @@ func NotifyUpcomingDueDate(c *gin.Context) {
 	}
 	var reminders []string
 	for _, transaction := range upcomingLendOrBorrowTransactions {
-		daysUntilExpense := int(time.Until(transaction.DueDate).Hours() / 24)
+		formattedDate, err := time.Parse("2006-01-02", transaction.DueDate)
+		if err != nil {
+			utils.HandleError(c, http.StatusInternalServerError, "Failed to parse next expense date", err)
+			continue
+		}
+		daysUntilExpense := int(time.Until(formattedDate).Hours() / 24)
 		if daysUntilExpense <= 5 {
 			reminders = append(reminders, sendLendOrBorrowReminder(transaction, daysUntilExpense))
 		}

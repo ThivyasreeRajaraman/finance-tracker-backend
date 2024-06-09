@@ -35,7 +35,7 @@ var _ = Describe("Create Transaction", func() {
 			PartnerName:    "TestPartner",
 			UserID:         mockUserData.ID,
 			ClosingBalance: 0,
-			DueDate:        time.Now(),
+			DueDate:        time.Now().Format("2006-01-02"),
 		}
 		initializers.DB.Create(&mockPartnerData)
 		gin.SetMode(gin.TestMode)
@@ -85,7 +85,7 @@ var _ = Describe("Create Transaction", func() {
 			c.Set("currentUser", mockUserData)
 			partner := "TestPartner"
 			lend := "lend"
-			dueDate := time.Now().AddDate(0, 0, 5)
+			dueDate := time.Now().AddDate(0, 0, 5).Format("2006-01-02")
 			var amount uint = 6000
 
 			transactionParams := helpers.TransactionData{
