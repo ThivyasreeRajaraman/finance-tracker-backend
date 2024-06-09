@@ -2,7 +2,6 @@ package utils
 
 import (
 	"strings"
-	"time"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
 )
@@ -34,11 +33,8 @@ func ValidateLendBorrowData(transactionData helpers.TransactionData) error {
 	if transactionData.TransactionPartner == nil || *transactionData.TransactionPartner == "" {
 		return CreateError("Transaction partner is required for lend/borrow transactions")
 	}
-	if transactionData.PaymentDueDate == nil || transactionData.PaymentDueDate.IsZero() {
+	if transactionData.PaymentDueDate == nil || *transactionData.PaymentDueDate == "" {
 		return CreateError("Payment due date is required for recurring expense transactions")
-	}
-	if transactionData.PaymentDueDate.Before(time.Now()) {
-		return CreateError("Payment due date cannot be in the past")
 	}
 	return nil
 }

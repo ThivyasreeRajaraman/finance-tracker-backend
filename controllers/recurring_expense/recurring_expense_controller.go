@@ -1,6 +1,7 @@
 package recurringexpensecontrollers
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 
@@ -31,12 +32,28 @@ func (controller *RecurringExpenseController) Create(c *gin.Context) {
 	var recurringExpenseData helpers.RecurringExpenseData
 	if err := recurringexpenseservices.UnmarshalAndValidate(c, &recurringExpenseData); err != nil {
 		utils.HandleError(c, http.StatusBadRequest, "Failed to unmarshal request body", err)
-		return
 	}
 
 	if err := recurringexpenseservices.Create(c, recurringExpenseData); err != nil {
-		utils.HandleError(c, http.StatusBadRequest, "Failed to create recurring expense", err)
-		return
+		fmt.Println("err.Error()::", err.Error())
+		if err.Error() == `ERROR: duplicate key value violates unique constraint "idx_category_id_user_id" (SQLSTATE 23505)` {
+			fmt.Println("yessss")
+			if expenseID, getExistingErr := recurringexpenseservices.GetExistingExpense(c, recurringExpenseData.CategoryName); expenseID != 0 {
+				fmt.Println("second yess")
+				c.JSON(http.StatusOK, gin.H{
+					"success":     true,
+					"status code": 200,
+					"error":       "Recurring expense for the same category exists already!",
+					"details":     err.Error(),
+					"existingId":  expenseID,
+				})
+			} else if getExistingErr != nil {
+				utils.HandleError(c, http.StatusInternalServerError, "Failed to retrieve existing expense", getExistingErr)
+			}
+		} else {
+			fmt.Println("noooo")
+			utils.HandleError(c, http.StatusBadRequest, "Failed to create recurring expense", err)
+		}
 	}
 }
 
@@ -102,7 +119,7 @@ func (controller *RecurringExpenseController) FetchSingleEntity(c *gin.Context) 
 		Category:        existingExpense.Category.Name,
 		Amount:          existingExpense.Amount,
 		Frequency:       existingExpense.Frequency,
-		NextExpenseDate: existingExpense.NextExpenseDate.Format("2006-01-02"),
+		NextExpenseDate: existingExpense.NextExpenseDate,
 	}
 
 	utils.SendResponse(c, "Expense fetched successfully", "expense", response)
