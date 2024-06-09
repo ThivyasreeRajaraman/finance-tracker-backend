@@ -1,6 +1,7 @@
 package usercontrollers
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 
@@ -55,10 +56,12 @@ func Fetch(c *gin.Context) {
 
 func FetchCategories(c *gin.Context) {
 	userID, err := utils.GetUserID(c)
+	transactionType := c.Param("transactionType")
+	fmt.Println("transaction:", transactionType)
 	if err != nil {
 		return
 	}
-	if err := userservices.FetchCategories(c, userID); err != nil {
+	if err := userservices.FetchCategories(c, userID, transactionType); err != nil {
 		return
 	}
 

@@ -21,8 +21,8 @@ func UpdateUser(c *gin.Context, user *models.User) error {
 	return nil
 }
 
-func FetchCategories(c *gin.Context, userID uint) error {
-	if err := userhelper.FetchCategories(c, userID); err != nil {
+func FetchCategories(c *gin.Context, userID uint, transactionType string) error {
+	if err := userhelper.FetchCategories(c, userID, transactionType); err != nil {
 		return err
 	}
 	return nil

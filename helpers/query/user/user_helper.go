@@ -1,6 +1,7 @@
 package userhelper
 
 import (
+	"fmt"
 	"net/http"
 
 	dbhelper "github.com/Thivyasree-Rajaraman/finance-tracker/helpers/query/common"
@@ -44,11 +45,22 @@ func FetchUserByClaims(claims jwt.MapClaims) (models.User, error) {
 	return user, nil
 }
 
-func FetchCategories(c *gin.Context, userID uint) error {
+func FetchCategories(c *gin.Context, userID uint, transactionType string) error {
 	var categories []models.Categories
-	err := initializers.DB.Model(&models.Categories{}).
-		Select("name").Where("user_id = ? OR user_id IS NULL", userID).
-		Find(&categories).Error
+	var targetType string
+	if transactionType == "budget" {
+		targetType = "expense"
+	} else if transactionType == "expense" {
+		targetType = "budget"
+	}
+	var err error
+	fmt.Println("type", transactionType)
+	if transactionType == "budget" || transactionType == "expense" {
+		err = initializers.DB.Model(&models.Categories{}).Select("name").Where("(type = ? OR type = ?) AND (user_id = ? OR user_id IS NULL)", transactionType, targetType, userID).Find(&categories).Error
+	} else {
+		// Income or recurringExpense
+		err = initializers.DB.Model(&models.Categories{}).Select("name").Where("type = ? AND (user_id = ? OR user_id IS NULL)", transactionType, userID).Find(&categories).Error
+	}
 	if err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch categories", err)
 		return err
