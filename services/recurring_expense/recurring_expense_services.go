@@ -3,6 +3,9 @@ package recurringexpenseservices
 import (
 	"fmt"
 	"net/http"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
@@ -32,6 +35,12 @@ func UnmarshalAndValidate(c *gin.Context, recurringExpenseData *helpers.Recurrin
 	if recurringExpenseData.NextExpenseDate == "" {
 		return utils.CreateError("Payment start date is required for recurring expense transactions")
 	}
+	if recurringExpenseData.Currency == "" {
+		return utils.CreateError("Currency cannot be empty")
+	}
+	if err := utils.IsValidCurrency(recurringExpenseData.Currency); err != nil {
+		return utils.CreateError("Invalid Currency Code")
+	}
 	if err := utils.IsValidFrequency(recurringExpenseData.Frequency); err != nil {
 		return err
 	}
@@ -54,6 +63,7 @@ func Create(c *gin.Context, recurringExpenseData helpers.RecurringExpenseData) e
 		Amount:          recurringExpenseData.Amount,
 		Frequency:       recurringExpenseData.Frequency,
 		NextExpenseDate: recurringExpenseData.NextExpenseDate,
+		Currency:        recurringExpenseData.Currency,
 	}
 	if err := dbhelper.GenericCreate(&recurringExpense); err != nil {
 		return err
@@ -79,6 +89,15 @@ func UnmarshalAndValidateForUpdate(c *gin.Context, recurringExpenseData *helpers
 			return utils.CreateError("frequency cannot be empty")
 		}
 		err := utils.IsValidFrequency(*recurringExpenseData.Frequency)
+		if err != nil {
+			return err
+		}
+	}
+	if recurringExpenseData.Currency != nil {
+		if *recurringExpenseData.Currency == "" {
+			return utils.CreateError("currency cannot be empty")
+		}
+		err := utils.IsValidCurrency(*recurringExpenseData.Currency)
 		if err != nil {
 			return err
 		}
@@ -125,11 +144,19 @@ func Update(c *gin.Context, recurringExpenseData helpers.UpdateRecurringExpenseD
 	if recurringExpenseData.NextExpenseDate != nil {
 		existingExpense.NextExpenseDate = *recurringExpenseData.NextExpenseDate
 	}
+	if recurringExpenseData.Currency != nil {
+		existingExpense.Currency = *recurringExpenseData.Currency
+	}
+	if recurringExpenseData.Active != nil {
+		existingExpense.Active = *recurringExpenseData.Active
+	}
+	fmt.Println("data bef::", existingExpense)
 
 	if err := dbhelper.GenericUpdate(existingExpense); err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to update budget", err)
 		return err
 	}
+	fmt.Println("data aft::", existingExpense)
 
 	if err := initializers.DB.Preload("Category").Preload("User").First(existingExpense, existingExpense.ID).Error; err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to preload user and category association", err)
@@ -169,69 +196,23 @@ func Delete(c *gin.Context, existingExpense *models.RecurringExpense) error {
 	return nil
 }
 
-// func SendRecurringExpenseReminders(c *gin.Context) {
-// 	userID, err := utils.GetUserID(c)
-// 	if err != nil {
-// 		return
-// 	}
-// 	var upcomingRecurringExpenses []models.RecurringExpense
-// 	if err := initializers.DB.Model(&models.RecurringExpense{}).
-// 		Where("user_id = ? AND next_expense_date BETWEEN ? AND ?", userID, time.Now(), time.Now().AddDate(0, 0, 5)).
-// 		Preload("User").Preload("Category").
-// 		Find(&upcomingRecurringExpenses).Error; err != nil {
-// 		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch upcoming recurring expenses", err)
-// 		return
-// 	}
-
-// 	for _, expense := range upcomingRecurringExpenses {
-// 		daysUntilExpense := int(time.Until(expense.NextExpenseDate).Hours() / 24)
-// 		if daysUntilExpense <= 5 {
-// 			sendRecurringExpenseReminder(c, expense, daysUntilExpense)
-// 		}
-// 		if expense.NextExpenseDate.Format("2006-01-02") == time.Now().Format("2006-01-02") {
-// 			switch expense.Frequency {
-// 			case "MONTHLY":
-// 				expense.NextExpenseDate = expense.NextExpenseDate.AddDate(0, 1, 0)
-// 			case "WEEKLY":
-// 				expense.NextExpenseDate = expense.NextExpenseDate.AddDate(0, 0, 7)
-// 			case "YEARLY":
-// 				expense.NextExpenseDate = expense.NextExpenseDate.AddDate(1, 0, 0)
-// 			}
-// 			if err := dbhelper.GenericUpdate(&expense); err != nil {
-// 				utils.HandleError(c, http.StatusInternalServerError, "Failed to update next expense date", err)
-// 				continue
-// 			}
-// 		}
-// 	}
-// }
-
-// func sendRecurringExpenseReminder(c *gin.Context, expense models.RecurringExpense, daysUntilExpense int) {
-// 	var message string
-// 	fmt.Println("\n\ndata::", daysUntilExpense)
-// 	if daysUntilExpense == 0 {
-// 		message = fmt.Sprintf("Your recurring expense for %s of %d %s is due today.",
-// 			expense.Category.Name, expense.Amount, *expense.User.DefaultCurrency)
-// 	} else {
-// 		fmt.Printf("data::%+v", expense)
-// 		message = fmt.Sprintf("Your recurring expense for %s of %d %s is due in %d day(s).",
-// 			expense.Category.Name, expense.Amount, *expense.User.DefaultCurrency, daysUntilExpense)
-// 	}
-
-//		c.JSON(http.StatusOK, gin.H{"Reminder": message})
-//	}
 func SendRecurringExpenseReminders(c *gin.Context) {
 	userID, err := utils.GetUserID(c)
 	if err != nil {
 		return
 	}
+	var reminders []map[string]interface{}
+
 	var upcomingRecurringExpenses []models.RecurringExpense
 	if err := initializers.DB.Model(&models.RecurringExpense{}).
-		Where("user_id = ? AND next_expense_date::date BETWEEN ? AND ?", userID, time.Now(), time.Now().AddDate(0, 0, 5)).
+		Where("user_id = ? AND active = ? AND next_expense_date::date BETWEEN ? AND ?", userID, true, time.Now(), time.Now().AddDate(0, 0, 5)).
 		Preload("User").Preload("Category").
 		Find(&upcomingRecurringExpenses).Error; err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch upcoming recurring expenses", err)
 		return
 	}
+
+	updatePastRecurringExpenses(c, userID)
 
 	for _, expense := range upcomingRecurringExpenses {
 		nextExpenseDate, err := time.Parse("2006-01-02", expense.NextExpenseDate)
@@ -242,39 +223,31 @@ func SendRecurringExpenseReminders(c *gin.Context) {
 
 		daysUntilExpense := int(time.Until(nextExpenseDate).Hours() / 24)
 		if daysUntilExpense <= 5 {
-			sendRecurringExpenseReminder(c, expense, daysUntilExpense)
-		}
-
-		if nextExpenseDate.Format("2006-01-02") == time.Now().Format("2006-01-02") {
-			switch expense.Frequency {
-			case "MONTHLY":
-				expense.NextExpenseDate = nextExpenseDate.AddDate(0, 1, 0).Format("2006-01-02")
-			case "WEEKLY":
-				expense.NextExpenseDate = nextExpenseDate.AddDate(0, 0, 7).Format("2006-01-02")
-			case "YEARLY":
-				expense.NextExpenseDate = nextExpenseDate.AddDate(1, 0, 0).Format("2006-01-02")
-			}
-
-			if err := dbhelper.GenericUpdate(&expense); err != nil {
-				utils.HandleError(c, http.StatusInternalServerError, "Failed to update next expense date", err)
-				continue
-			}
+			reminder := sendRecurringExpenseReminder(expense, daysUntilExpense)
+			reminders = append(reminders, reminder)
 		}
 	}
+	sortedReminders, err := sortReminders(reminders)
+	if err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to sort expenses", err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"Reminder": sortedReminders})
 }
 
-func sendRecurringExpenseReminder(c *gin.Context, expense models.RecurringExpense, daysUntilExpense int) {
+func sendRecurringExpenseReminder(expense models.RecurringExpense, daysUntilExpense int) map[string]interface{} {
 	var message string
 	if daysUntilExpense == 0 {
-		message = fmt.Sprintf("Your recurring expense for %s of %d %s is due today.",
-			expense.Category.Name, expense.Amount, *expense.User.DefaultCurrency)
+		message = fmt.Sprintf("Your recurring expense for %s of %d %s is due today!",
+			expense.Category.Name, expense.Amount, expense.Currency)
 	} else {
-		message = fmt.Sprintf("Your recurring expense for %s of %d %s is due in %d day(s).",
-			expense.Category.Name, expense.Amount, *expense.User.DefaultCurrency, daysUntilExpense)
+		message = fmt.Sprintf("Your recurring expense for %s of %d %s is due in %d day(s)!",
+			expense.Category.Name, expense.Amount, expense.Currency, daysUntilExpense)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"Reminder": message})
+	return map[string]interface{}{"reminders": message, "id": expense.ID}
 }
+
 func GetExistingExpense(c *gin.Context, categoryName string) (uint, error) {
 	userID, err := utils.GetUserID(c)
 	if err != nil {
@@ -290,4 +263,78 @@ func GetExistingExpense(c *gin.Context, categoryName string) (uint, error) {
 		return utils.Zero, err
 	}
 	return recurringExpenseID, nil
+}
+
+func sortReminders(reminders []map[string]interface{}) ([]map[string]interface{}, error) {
+	sort.SliceStable(reminders, func(i, j int) bool {
+		return getDueTime(reminders[i]["reminders"].(string)) < getDueTime(reminders[j]["reminders"].(string))
+	})
+
+	return reminders, nil
+}
+
+func getDueTime(reminder string) int {
+	if strings.Contains(reminder, "today") {
+		return 0
+	}
+	parts := strings.Split(reminder, " ")
+	for i, part := range parts {
+		if part == "day(s)!" || part == "day(s)," {
+			dueTime, _ := strconv.Atoi(parts[i-1])
+			fmt.Println("dueeeee", parts[i-1])
+			return dueTime
+		}
+	}
+	return -1
+}
+
+func updatePastRecurringExpenses(c *gin.Context, userID uint) {
+	var pastRecurringExpenses []models.RecurringExpense
+	if err := initializers.DB.Model(&models.RecurringExpense{}).
+		Where("user_id = ? AND active = ? AND next_expense_date::date < ?", userID, true, time.Now()).
+		Find(&pastRecurringExpenses).Error; err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to update past expense date", err)
+		return
+	}
+
+	for _, expense := range pastRecurringExpenses {
+		nextExpenseDate, err := time.Parse("2006-01-02", expense.NextExpenseDate)
+		if err != nil {
+			utils.HandleError(c, http.StatusInternalServerError, "Failed to update past expense date", err)
+			continue
+		}
+		var newNextExpenseDate time.Time
+		if nextExpenseDate.Day() > time.Now().Day() {
+			newNextExpenseDate = time.Date(time.Now().Year(), time.Now().Month(), nextExpenseDate.Day(), 0, 0, 0, 0, nextExpenseDate.Location())
+		} else {
+			newNextExpenseDate = time.Date(time.Now().Year(), time.Now().Month(), nextExpenseDate.Day(), 0, 0, 0, 0, nextExpenseDate.Location())
+			newNextExpenseDate = newNextExpenseDate.AddDate(0, 1, 0)
+		}
+
+		if err := initializers.DB.Model(&expense).Update("next_expense_date", newNextExpenseDate.Format("2006-01-02")).Error; err != nil {
+			utils.HandleError(c, http.StatusInternalServerError, "Failed to update past expense date", err)
+			continue
+		}
+	}
+}
+
+func UpdateNextExpenseDate(c *gin.Context, existingExpense *models.RecurringExpense) error {
+	nextExpenseDate, err := time.Parse("2006-01-02", existingExpense.NextExpenseDate)
+	if err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to parse next expense date", err)
+		return err
+	}
+	switch existingExpense.Frequency {
+	case "MONTHLY":
+		existingExpense.NextExpenseDate = nextExpenseDate.AddDate(0, 1, 0).Format("2006-01-02")
+	case "WEEKLY":
+		existingExpense.NextExpenseDate = nextExpenseDate.AddDate(0, 0, 7).Format("2006-01-02")
+	case "YEARLY":
+		existingExpense.NextExpenseDate = nextExpenseDate.AddDate(1, 0, 0).Format("2006-01-02")
+	}
+	if err := dbhelper.GenericUpdate(existingExpense); err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to update budget", err)
+		return err
+	}
+	return nil
 }

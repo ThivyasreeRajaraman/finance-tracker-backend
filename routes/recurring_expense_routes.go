@@ -15,4 +15,5 @@ func SetupRecurringExpenseRoutes(router *gin.RouterGroup) {
 	router.GET("/user/recurringExpense/:recurringExpenseId", controller.FetchSingleEntity)
 	router.GET("/user/recurringExpense/reminder", controller.Remind)
 	router.GET("/recurringExpense/Frequencies", controller.FetchFrequencies)
+	router.PUT("/user/recurringExpense/:recurringExpenseId/updateNextExpenseDate", controller.UpdateNextExpenseDate)
 }

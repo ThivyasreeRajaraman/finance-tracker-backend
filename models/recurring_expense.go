@@ -13,6 +13,8 @@ type RecurringExpense struct {
 	Amount          uint       `json:"amount"`
 	Frequency       string     `json:"frequency"`
 	NextExpenseDate string     `json:"next_expense_date"`
+	Currency        string     `json:"currency"`
+	Active          bool       `json:"active"`
 }
 
 func MigrateRecurringExpense(db *gorm.DB) error {
@@ -21,5 +23,10 @@ func MigrateRecurringExpense(db *gorm.DB) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (r *RecurringExpense) BeforeCreate(tx *gorm.DB) (err error) {
+	r.Active = true
 	return nil
 }

@@ -22,6 +22,7 @@ type RecurringExpenseControllerInterface interface {
 	FetchSingleEntity(c *gin.Context)
 	Remind(c *gin.Context)
 	FetchFrequencies(c *gin.Context)
+	UpdateNextExpenseDate(c *gin.Context)
 }
 
 func GetRecurringExpenseControllerInstance() RecurringExpenseControllerInterface {
@@ -33,7 +34,6 @@ func (controller *RecurringExpenseController) Create(c *gin.Context) {
 	if err := recurringexpenseservices.UnmarshalAndValidate(c, &recurringExpenseData); err != nil {
 		utils.HandleError(c, http.StatusBadRequest, "Failed to unmarshal request body", err)
 	}
-
 	if err := recurringexpenseservices.Create(c, recurringExpenseData); err != nil {
 		fmt.Println("err.Error()::", err.Error())
 		if err.Error() == `ERROR: duplicate key value violates unique constraint "idx_category_id_user_id" (SQLSTATE 23505)` {
@@ -63,7 +63,6 @@ func (controller *RecurringExpenseController) Update(c *gin.Context) {
 		utils.HandleError(c, http.StatusBadRequest, "Failed to unmarshal request body", err)
 		return
 	}
-
 	if err := recurringexpenseservices.Update(c, recurringExpenseData); err != nil {
 		utils.HandleError(c, http.StatusBadRequest, "Failed to update recurring expense", err)
 		return
@@ -120,7 +119,18 @@ func (controller *RecurringExpenseController) FetchSingleEntity(c *gin.Context) 
 		Amount:          existingExpense.Amount,
 		Frequency:       existingExpense.Frequency,
 		NextExpenseDate: existingExpense.NextExpenseDate,
+		Currency:        existingExpense.Currency,
 	}
 
 	utils.SendResponse(c, "Expense fetched successfully", "expense", response)
+}
+
+func (controller *RecurringExpenseController) UpdateNextExpenseDate(c *gin.Context) {
+	existingExpense, err := recurringexpenseservices.GetExpenseFromPathParam(c)
+	if err != nil {
+		return
+	}
+	if err := recurringexpenseservices.UpdateNextExpenseDate(c, existingExpense); err != nil {
+		return
+	}
 }

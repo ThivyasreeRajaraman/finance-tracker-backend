@@ -66,6 +66,7 @@ type RecurringExpenseData struct {
 	Amount          uint   `json:"amount"`
 	Frequency       string `json:"frequency"`
 	NextExpenseDate string `json:"next_expense_date"`
+	Currency        string `json:"currency"`
 }
 
 type UpdateRecurringExpenseData struct {
@@ -73,6 +74,8 @@ type UpdateRecurringExpenseData struct {
 	Amount          *uint   `json:"amount"`
 	Frequency       *string `json:"frequency"`
 	NextExpenseDate *string `json:"next_expense_date"`
+	Currency        *string `json:"currency"`
+	Active          *bool   `json:"active"`
 }
 
 type RecurringExpenseResponse struct {
@@ -80,4 +83,6 @@ type RecurringExpenseResponse struct {
 	Amount          uint   `json:"amount"`
 	Frequency       string `json:"frequency"`
 	NextExpenseDate string `json:"next_expense_date"`
+	Currency        string `json:"currency"`
+	Active          bool   `json:"active"`
 }
