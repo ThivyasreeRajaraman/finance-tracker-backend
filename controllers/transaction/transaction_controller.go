@@ -18,6 +18,9 @@ type TransactionControllerInterface interface {
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
 	FetchTransactionTypes(c *gin.Context)
+	FetchTotal(c *gin.Context)
+	FetchSingleTransaction(c *gin.Context)
+	Fetch(c *gin.Context)
 }
 
 func GetTransactionControllerInstance() TransactionControllerInterface {
@@ -105,7 +108,7 @@ func (controller *TransactionController) Fetch(c *gin.Context) {
 		"user_id":          userID,
 		"transaction_type": transactionType,
 	}
-	if data := utils.List(c, transactionModel, conditions, nil, "created_at DESC"); data != nil {
+	if data := utils.List(c, transactionModel, conditions, "created_at DESC"); data != nil {
 		return
 	}
 }

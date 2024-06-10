@@ -11,4 +11,7 @@ func SetupTransactionRoutes(router *gin.RouterGroup) {
 	router.PUT("/user/transaction/:transactionId", controller.Update)
 	router.DELETE("/user/transaction/:transactionId", controller.Delete)
 	router.GET("/transactionTypes", controller.FetchTransactionTypes)
+	router.GET("/user/transactionTotal", controller.FetchTotal)
+	router.GET("/user/transaction/:transactionId", controller.FetchSingleTransaction)
+	router.GET("/user/transactions/:transactionType", controller.Fetch)
 }

@@ -235,3 +235,11 @@ func Delete(c *gin.Context, transaction *models.Transaction) error {
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Transaction deleted successfully"})
 	return nil
 }
+
+func CalculateTotal(c *gin.Context) error {
+	if err := transactionhelpers.CalculateTotalAmounts(c); err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to retrieve total amount of transaction", err)
+		return err
+	}
+	return nil
+}

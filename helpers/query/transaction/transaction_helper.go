@@ -19,7 +19,7 @@ func FetchByID(c *gin.Context, transaction *models.Transaction, transactionId ui
 		return err
 	}
 
-	if err := initializers.DB.Where("user_id = ?", userID).First(&transaction, transactionId).Error; err != nil {
+	if err := initializers.DB.Preload("Category").Preload("TransactionPartner").Where("user_id = ?", userID).First(&transaction, transactionId).Error; err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to retrieve existing transaction", err)
 		return err
 	}
@@ -80,4 +80,52 @@ func CheckThreshold(c *gin.Context, transaction helpers.TransactionResponse, use
 		}
 	}
 	return ""
+}
+
+func CalculateTotalAmounts(c *gin.Context) error {
+	totalAmounts := make(map[string]float64)
+	userID, err := utils.GetUserID(c)
+	if err != nil {
+		return err
+	}
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	endOfMonth := startOfMonth.AddDate(0, 1, 0).Add(-time.Nanosecond)
+
+	rows, err := initializers.DB.Model(&models.Transaction{}).
+		Select("transaction_type, SUM(amount) as total_amount").
+		Where("user_id = ? AND created_at >= ? AND created_at <= ?", userID, startOfMonth, endOfMonth).
+		Group("transaction_type").
+		Rows()
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for transactionType := range utils.ValidTransactionTypes {
+		totalAmounts[transactionType] = 0
+	}
+	totalAmounts["budget"] = 0
+
+	for rows.Next() {
+		var transactionType string
+		var totalAmount float64
+		if err := rows.Scan(&transactionType, &totalAmount); err != nil {
+			return err
+		}
+		if _, ok := utils.ValidTransactionTypes[transactionType]; ok {
+			totalAmounts[transactionType] = totalAmount
+		}
+	}
+	var totalBudgetAmount float64
+	if err := initializers.DB.Model(&models.Budgets{}).
+		Select("SUM(amount)").
+		Where("user_id = ? AND created_at >= ? AND created_at <= ?", userID, startOfMonth, endOfMonth).
+		Scan(&totalBudgetAmount).Error; err != nil {
+		return err
+	}
+	totalAmounts["budget"] = totalBudgetAmount
+
+	utils.SendResponse(c, "Total fetched successfully", "transaction_total", totalAmounts)
+	return nil
 }
