@@ -48,15 +48,17 @@ func FetchUserByClaims(claims jwt.MapClaims) (models.User, error) {
 func FetchCategories(c *gin.Context, userID uint, transactionType string) error {
 	var categories []models.Categories
 	var targetType string
+	var targetType2 string
 	if transactionType == "budget" {
 		targetType = "expense"
+		targetType2 = "recurringExpense"
 	} else if transactionType == "expense" {
 		targetType = "budget"
 	}
 	var err error
 	fmt.Println("type", transactionType)
 	if transactionType == "budget" || transactionType == "expense" {
-		err = initializers.DB.Model(&models.Categories{}).Select("name").Where("(type = ? OR type = ?) AND (user_id = ? OR user_id IS NULL)", transactionType, targetType, userID).Find(&categories).Error
+		err = initializers.DB.Model(&models.Categories{}).Select("name").Where("(type = ? OR type = ? OR type = ?) AND (user_id = ? OR user_id IS NULL)", transactionType, targetType, targetType2, userID).Find(&categories).Error
 	} else {
 		// Income or recurringExpense
 		err = initializers.DB.Model(&models.Categories{}).Select("name").Where("type = ? AND (user_id = ? OR user_id IS NULL)", transactionType, userID).Find(&categories).Error

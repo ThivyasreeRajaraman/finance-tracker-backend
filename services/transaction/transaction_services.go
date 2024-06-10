@@ -243,3 +243,11 @@ func CalculateTotal(c *gin.Context) error {
 	}
 	return nil
 }
+
+func CalculateCategoryWiseTotal(c *gin.Context) error {
+	if err := transactionhelpers.CalculateCategoryWiseAmounts(c); err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to retrieve total amount of transaction", err)
+		return err
+	}
+	return nil
+}

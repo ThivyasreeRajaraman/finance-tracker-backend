@@ -14,4 +14,5 @@ func SetupTransactionRoutes(router *gin.RouterGroup) {
 	router.GET("/user/transactionTotal", controller.FetchTotal)
 	router.GET("/user/transaction/:transactionId", controller.FetchSingleTransaction)
 	router.GET("/user/transactions/:transactionType", controller.Fetch)
+	router.GET("/user/categoryWiseTotal", controller.FetchCategoryWiseTotal)
 }

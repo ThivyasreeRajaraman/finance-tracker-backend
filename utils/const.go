@@ -38,10 +38,11 @@ var ValidCurrencies = map[string]bool{
 }
 
 var ValidTransactionTypes = map[string]bool{
-	"income":  true,
-	"expense": true,
-	"lend":    true,
-	"borrow":  true,
+	"income":           true,
+	"expense":          true,
+	"lend":             true,
+	"borrow":           true,
+	"recurringExpense": true,
 }
 
 var ValidFrequencies = map[string]bool{

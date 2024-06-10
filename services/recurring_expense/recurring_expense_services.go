@@ -205,7 +205,7 @@ func SendRecurringExpenseReminders(c *gin.Context) {
 
 	var upcomingRecurringExpenses []models.RecurringExpense
 	if err := initializers.DB.Model(&models.RecurringExpense{}).
-		Where("user_id = ? AND active = ? AND next_expense_date::date BETWEEN ? AND ?", userID, true, time.Now(), time.Now().AddDate(0, 0, 5)).
+		Where("user_id = ? AND active = ? AND next_expense_date BETWEEN ? AND ?", userID, true, time.Now().Format("2006-01-02"), time.Now().AddDate(0, 0, 5).Format("2006-01-02")).
 		Preload("User").Preload("Category").
 		Find(&upcomingRecurringExpenses).Error; err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch upcoming recurring expenses", err)
@@ -290,12 +290,15 @@ func getDueTime(reminder string) int {
 
 func updatePastRecurringExpenses(c *gin.Context, userID uint) {
 	var pastRecurringExpenses []models.RecurringExpense
+	fmt.Println("timeeee::", time.Now().Format("2006-01-02"))
 	if err := initializers.DB.Model(&models.RecurringExpense{}).
-		Where("user_id = ? AND active = ? AND next_expense_date::date < ?", userID, true, time.Now()).
+		Where("user_id = ? AND active = ? AND next_expense_date < ?", userID, true, time.Now().Format("2006-01-02")).
 		Find(&pastRecurringExpenses).Error; err != nil {
+		fmt.Println("error here")
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to update past expense date", err)
 		return
 	}
+	fmt.Println("no errorr")
 
 	for _, expense := range pastRecurringExpenses {
 		nextExpenseDate, err := time.Parse("2006-01-02", expense.NextExpenseDate)
@@ -319,6 +322,11 @@ func updatePastRecurringExpenses(c *gin.Context, userID uint) {
 }
 
 func UpdateNextExpenseDate(c *gin.Context, existingExpense *models.RecurringExpense) error {
+	userID, err := utils.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
 	nextExpenseDate, err := time.Parse("2006-01-02", existingExpense.NextExpenseDate)
 	if err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to parse next expense date", err)
@@ -334,6 +342,17 @@ func UpdateNextExpenseDate(c *gin.Context, existingExpense *models.RecurringExpe
 	}
 	if err := dbhelper.GenericUpdate(existingExpense); err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to update budget", err)
+		return err
+	}
+
+	transaction := models.Transaction{
+		UserID:          userID,
+		TransactionType: "recurringExpense",
+		CategoryID:      &existingExpense.CategoryID,
+		Amount:          existingExpense.Amount,
+		Currency:        existingExpense.Currency,
+	}
+	if err := dbhelper.GenericCreate(&transaction); err != nil {
 		return err
 	}
 	return nil
