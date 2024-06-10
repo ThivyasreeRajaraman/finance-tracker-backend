@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
+	"github.com/Thivyasree-Rajaraman/finance-tracker/models"
 	transactionservices "github.com/Thivyasree-Rajaraman/finance-tracker/services/transaction"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/utils"
 	"github.com/gin-gonic/gin"
@@ -75,4 +76,36 @@ func (controller *TransactionController) FetchTransactionTypes(c *gin.Context) {
 	}
 	sort.Strings(transactionTypes)
 	c.JSON(http.StatusOK, gin.H{"transaction_types": transactionTypes})
+}
+
+func (controller *TransactionController) FetchTotal(c *gin.Context) {
+	transactionservices.CalculateTotal(c)
+}
+
+func (controller *TransactionController) FetchSingleTransaction(c *gin.Context) {
+	transactionId, err := utils.ParseUintParam(c, "transactionId")
+	if err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Invalid transaction id", err)
+		return
+	}
+	var transaction models.Transaction
+	transactionservices.FetchTransactionById(c, &transaction, transactionId)
+	utils.SendResponse(c, "Transaction fetched successfully", "transaction", transaction)
+}
+
+func (controller *TransactionController) Fetch(c *gin.Context) {
+	transactionModel := new(models.Transaction)
+	userID, err := utils.GetUserID(c)
+	if err != nil {
+		return
+	}
+	transactionType := c.Param("transactionType")
+
+	conditions := map[string]interface{}{
+		"user_id":          userID,
+		"transaction_type": transactionType,
+	}
+	if data := utils.List(c, transactionModel, conditions, nil, "created_at DESC"); data != nil {
+		return
+	}
 }

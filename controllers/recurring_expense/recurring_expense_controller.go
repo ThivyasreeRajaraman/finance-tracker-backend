@@ -73,7 +73,7 @@ func (controller *RecurringExpenseController) Fetch(c *gin.Context) {
 	conditions := map[string]interface{}{
 		"user_id": userID,
 	}
-	if data := utils.List(c, recurringExpenseModel, conditions, "next_expense_date ASC"); data != nil {
+	if data := utils.List(c, recurringExpenseModel, conditions, nil, "next_expense_date ASC"); data != nil {
 		return
 	}
 }

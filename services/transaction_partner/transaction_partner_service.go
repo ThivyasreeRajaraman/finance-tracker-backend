@@ -28,12 +28,9 @@ func UnmarshalAndValidate(c *gin.Context, transactionPartnerData *helpers.Transa
 func GetOrCreatePartner(userID uint, partnerName *string) ([]helpers.TransactionPartnerResponse, error) {
 	var partner *models.TransactionPartner
 	var err error
-	partner, err = transactionpartnerhelper.Fetch(userID, partnerName)
+	partner, err = transactionpartnerhelper.FetchOrCreate(userID, partnerName)
 	if err != nil {
-		partner, err = transactionpartnerhelper.Create(userID, partnerName)
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 	partners := []models.TransactionPartner{*partner}
 	partnerResponse, err := utils.CreatePartnerResponse(partners)

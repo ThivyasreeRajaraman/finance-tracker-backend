@@ -49,7 +49,7 @@ func Fetch(c *gin.Context) {
 	conditions := map[string]interface{}{
 		"id": userID,
 	}
-	if data := utils.List(c, userModel, conditions, ""); data != nil {
+	if data := utils.List(c, userModel, conditions, nil, ""); data != nil {
 		return
 	}
 }

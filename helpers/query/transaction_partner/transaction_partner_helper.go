@@ -35,11 +35,18 @@ func UpdateTransactionPartnerAmount(id uint, transactionType string, amount uint
 	return nil
 }
 
-func Fetch(userID uint, partnerName *string) (*models.TransactionPartner, error) {
+func FetchOrCreate(userID uint, partnerName *string) (*models.TransactionPartner, error) {
 	var partner models.TransactionPartner
 	err := initializers.DB.Where("user_id = ? AND LOWER(partner_name) = ?", userID, strings.ToLower(*partnerName)).First(&partner).Error
 	if err != nil {
-		return nil, err
+		newPartner := models.TransactionPartner{
+			PartnerName: *partnerName,
+			UserID:      userID,
+		}
+		if err = dbhelper.GenericCreate(&newPartner); err != nil {
+			return nil, err
+		}
+		return &newPartner, nil
 	}
 	return &partner, nil
 }

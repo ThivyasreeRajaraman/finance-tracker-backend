@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
+	"github.com/Thivyasree-Rajaraman/finance-tracker/models"
 	transactionpartnerservice "github.com/Thivyasree-Rajaraman/finance-tracker/services/transaction_partner"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/utils"
 	"github.com/gin-gonic/gin"
@@ -44,16 +45,17 @@ func (controller *PartnerController) FetchOrCreate(c *gin.Context) {
 
 func (controller *PartnerController) Fetch(c *gin.Context) {
 
-	partners, err := transactionpartnerservice.Fetch(c)
+	partnerModel := new(models.TransactionPartner)
+	userID, err := utils.GetUserID(c)
 	if err != nil {
-		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch partners", err)
+		return
 	}
-	partnerResponses, err := utils.CreatePartnerResponse(partners)
-	if err != nil {
-		utils.HandleError(c, http.StatusInternalServerError, "Failed to construct partner response", err)
+	conditions := map[string]interface{}{
+		"user_id": userID,
 	}
-
-	utils.SendResponse(c, "Transaction partners fetched successfully", "Transaction Partners", partnerResponses)
+	if data := utils.List(c, partnerModel, conditions, nil, "id ASC"); data != nil {
+		return
+	}
 }
 
 func (controller *PartnerController) Remind(c *gin.Context) {

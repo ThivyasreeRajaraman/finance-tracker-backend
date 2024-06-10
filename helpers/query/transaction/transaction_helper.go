@@ -44,7 +44,7 @@ func HandleLendBorrowTransaction(userID uint, transaction *models.Transaction, t
 		return err
 	}
 
-	partner, err := transactionpartnerhelper.Fetch(userID, transactionData.TransactionPartner)
+	partner, err := transactionpartnerhelper.FetchOrCreate(userID, transactionData.TransactionPartner)
 	if err != nil {
 		return utils.CreateError("Failed to get transaction partner")
 	}
