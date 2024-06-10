@@ -21,6 +21,7 @@ type TransactionControllerInterface interface {
 	FetchTotal(c *gin.Context)
 	FetchSingleTransaction(c *gin.Context)
 	Fetch(c *gin.Context)
+	FetchCategoryWiseTotal(c *gin.Context)
 }
 
 func GetTransactionControllerInstance() TransactionControllerInterface {
@@ -85,6 +86,10 @@ func (controller *TransactionController) FetchTotal(c *gin.Context) {
 	transactionservices.CalculateTotal(c)
 }
 
+func (controller *TransactionController) FetchCategoryWiseTotal(c *gin.Context) {
+	transactionservices.CalculateCategoryWiseTotal(c)
+}
+
 func (controller *TransactionController) FetchSingleTransaction(c *gin.Context) {
 	transactionId, err := utils.ParseUintParam(c, "transactionId")
 	if err != nil {
@@ -107,6 +112,9 @@ func (controller *TransactionController) Fetch(c *gin.Context) {
 	conditions := map[string]interface{}{
 		"user_id":          userID,
 		"transaction_type": transactionType,
+	}
+	if transactionType == "expense" {
+		conditions["transaction_type"] = []string{"expense", "recurringExpense"}
 	}
 	if data := utils.List(c, transactionModel, conditions, nil, "created_at DESC"); data != nil {
 		return
