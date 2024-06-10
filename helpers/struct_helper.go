@@ -9,6 +9,7 @@ type BudgetData struct {
 	CategoryName *string `json:"category_name"`
 	Amount       *uint   `json:"amount"`
 	Threshold    *uint   `json:"threshold"`
+	Currency     string  `json:"currency"`
 }
 
 type BudgetResponse struct {
@@ -21,6 +22,7 @@ type BudgetResponse struct {
 	CategoryName    string `json:"category_name"`
 	Amount          uint   `json:"amount"`
 	Threshold       uint   `json:"threshold"`
+	Currency        string `json:"currency"`
 }
 
 type TransactionData struct {
