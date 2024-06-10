@@ -36,7 +36,9 @@ func HandleIncomeExpenseTransaction(userID uint, transaction *models.Transaction
 	if err != nil {
 		return utils.CreateError("Failed to get or create category")
 	}
-
+	if err := utils.IsValidCurrency(transactionData.Currency); err != nil {
+		return utils.CreateError("Invalid Currency Code")
+	}
 	transaction.CategoryID = &category.ID
 	return nil
 }
@@ -54,6 +56,9 @@ func HandleLendBorrowTransaction(userID uint, transaction *models.Transaction, t
 	transaction.TransactionPartnerID = &partner.ID
 	if err := transactionpartnerhelper.UpdateTransactionPartnerAmount(*transaction.TransactionPartnerID, transactionData.TransactionType, transactionData.Amount, transactionData.PaymentDueDate); err != nil {
 		return err
+	}
+	if err := utils.IsValidCurrency(transactionData.Currency); err != nil {
+		return utils.CreateError("Invalid Currency Code")
 	}
 
 	return nil
@@ -139,33 +144,33 @@ func CalculateTotalAmounts(c *gin.Context) error {
 		}
 	}
 
-	budgetRows, err := initializers.DB.Model(&models.Budgets{}).
-		Select("SUM(amount), currency").
-		Where("user_id = ? AND created_at >= ? AND created_at <= ?", userID, startOfMonth, endOfMonth).
-		Group("currency").
-		Rows()
-	if err != nil {
-		return err
-	}
-	defer budgetRows.Close()
+	// budgetRows, err := initializers.DB.Model(&models.Budgets{}).
+	// 	Select("SUM(amount), currency").
+	// 	Where("user_id = ? AND created_at >= ? AND created_at <= ?", userID, startOfMonth, endOfMonth).
+	// 	Group("currency").
+	// 	Rows()
+	// if err != nil {
+	// 	return err
+	// }
+	// defer budgetRows.Close()
 
-	for budgetRows.Next() {
-		var totalBudgetAmount uint
-		var currency string
-		if err := budgetRows.Scan(&totalBudgetAmount, &currency); err != nil {
-			return err
-		}
+	// for budgetRows.Next() {
+	// 	var totalBudgetAmount uint
+	// 	var currency string
+	// 	if err := budgetRows.Scan(&totalBudgetAmount, &currency); err != nil {
+	// 		return err
+	// 	}
 
-		if currency != *user.DefaultCurrency {
-			convertedBudgetAmount, convErr := convertCurrency(totalBudgetAmount, currency, user.DefaultCurrency)
-			if convErr != nil {
-				return convErr
-			}
-			totalBudgetAmount = convertedBudgetAmount
-		}
+	// 	if currency != *user.DefaultCurrency {
+	// 		convertedBudgetAmount, convErr := convertCurrency(totalBudgetAmount, currency, user.DefaultCurrency)
+	// 		if convErr != nil {
+	// 			return convErr
+	// 		}
+	// 		totalBudgetAmount = convertedBudgetAmount
+	// 	}
 
-		totalAmounts["budget"] += totalBudgetAmount
-	}
+	// 	totalAmounts["budget"] += totalBudgetAmount
+	// }
 
 	utils.SendResponse(c, "Total fetched successfully", "transaction_total", totalAmounts)
 	return nil
@@ -249,8 +254,51 @@ func GetCategoryName(c *gin.Context, categoryID *uint) string {
 	return category.Name
 }
 
+// func GetBudgetAmount(c *gin.Context, userID uint, startOfMonth time.Time, endOfMonth time.Time) (map[string]uint, error) {
+// 	budgetAmounts := make(map[string]uint)
+// 	rows, err := initializers.DB.Model(&models.Budgets{}).
+// 		Select("category_id, SUM(amount) as total_amount, currency").
+// 		Where("user_id = ? AND created_at >= ? AND created_at <= ?", userID, startOfMonth, endOfMonth).
+// 		Group("category_id, currency").
+// 		Rows()
+// 	if err != nil {
+// 		return budgetAmounts, err
+// 	}
+// 	defer rows.Close()
+
+// 	for rows.Next() {
+// 		var categoryID uint
+// 		var totalAmount uint
+// 		var currency string
+// 		userInterface, _ := c.Get("currentUser")
+// 		user, ok := userInterface.(models.User)
+// 		if !ok {
+// 			err := utils.CreateError("invalid user data")
+// 			utils.HandleError(c, http.StatusBadRequest, err.Error(), nil)
+// 			return nil, err
+// 		}
+// 		if err := rows.Scan(&categoryID, &totalAmount, &currency); err != nil {
+// 			return budgetAmounts, err
+// 		}
+// 		categoryName := GetCategoryName(c, &categoryID)
+// 		if categoryName != "" {
+// 			if currency != *user.DefaultCurrency {
+// 				convertedAmount, convErr := convertCurrency(totalAmount, currency, user.DefaultCurrency)
+// 				if convErr != nil {
+// 					return budgetAmounts, convErr
+// 				}
+// 				totalAmount = convertedAmount
+// 			}
+// 			budgetAmounts[categoryName] = totalAmount
+// 		}
+// 	}
+
+// 	return budgetAmounts, nil
+// }
+
 func GetBudgetAmount(c *gin.Context, userID uint, startOfMonth time.Time, endOfMonth time.Time) (map[string]uint, error) {
 	budgetAmounts := make(map[string]uint)
+
 	rows, err := initializers.DB.Model(&models.Budgets{}).
 		Select("category_id, SUM(amount) as total_amount, currency").
 		Where("user_id = ? AND created_at >= ? AND created_at <= ?", userID, startOfMonth, endOfMonth).
@@ -261,30 +309,34 @@ func GetBudgetAmount(c *gin.Context, userID uint, startOfMonth time.Time, endOfM
 	}
 	defer rows.Close()
 
+	userInterface, _ := c.Get("currentUser")
+	user, ok := userInterface.(models.User)
+	if !ok {
+		err := utils.CreateError("invalid user data")
+		utils.HandleError(c, http.StatusBadRequest, err.Error(), nil)
+		return nil, err
+	}
+
 	for rows.Next() {
 		var categoryID uint
 		var totalAmount uint
 		var currency string
-		userInterface, _ := c.Get("currentUser")
-		user, ok := userInterface.(models.User)
-		if !ok {
-			err := utils.CreateError("invalid user data")
-			utils.HandleError(c, http.StatusBadRequest, err.Error(), nil)
-			return nil, err
-		}
 		if err := rows.Scan(&categoryID, &totalAmount, &currency); err != nil {
 			return budgetAmounts, err
 		}
 		categoryName := GetCategoryName(c, &categoryID)
 		if categoryName != "" {
+			if _, ok := budgetAmounts[categoryName]; !ok {
+				budgetAmounts[categoryName] = 0
+			}
 			if currency != *user.DefaultCurrency {
 				convertedAmount, convErr := convertCurrency(totalAmount, currency, user.DefaultCurrency)
 				if convErr != nil {
 					return budgetAmounts, convErr
 				}
-				totalAmount = convertedAmount
+				totalAmount = uint(convertedAmount)
 			}
-			budgetAmounts[categoryName] = totalAmount
+			budgetAmounts[categoryName] += totalAmount
 		}
 	}
 

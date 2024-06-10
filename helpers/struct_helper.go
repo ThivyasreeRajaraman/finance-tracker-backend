@@ -29,6 +29,7 @@ type TransactionData struct {
 	Amount             uint    `json:"amount"`
 	TransactionPartner *string `json:"transaction_partner,omitempty"`
 	PaymentDueDate     *string `json:"payment_due_date,omitempty"`
+	Currency           string  `json:"currency"`
 }
 
 type TransactionResponse struct {
@@ -42,12 +43,14 @@ type TransactionResponse struct {
 	Amount             uint    `json:"amount"`
 	TransactionPartner *string `json:"transaction_partner,omitempty"`
 	PaymentDueDate     *string `json:"payment_due_date,omitempty"`
+	Currency           string  `json:"currency"`
 }
 
 type TransactionUpdate struct {
 	TransactionType *string `json:"transaction_type,omitempty"`
 	CategoryName    *string `json:"category_name,omitempty"`
 	Amount          *uint   `json:"amount,omitempty"`
+	Currency        *string `json:"currency,omitempty"`
 }
 
 type TransactionPartnerData struct {

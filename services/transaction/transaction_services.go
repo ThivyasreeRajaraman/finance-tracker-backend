@@ -28,6 +28,9 @@ func UnmarshalAndValidate(c *gin.Context, transactionData *helpers.TransactionDa
 	if err := utils.IsValidTransactionType(transactionData.TransactionType); err != nil {
 		return utils.CreateError("transaction type not found")
 	}
+	if err := utils.IsValidCurrency(transactionData.Currency); err != nil {
+		return utils.CreateError("Invalid Currency Code")
+	}
 	return nil
 }
 
@@ -47,7 +50,11 @@ func UnmarshalAndValidateSingleEntity(c *gin.Context, transactionData *helpers.T
 	if transactionData.TransactionType != nil && *transactionData.TransactionType != "income" && *transactionData.TransactionType != "expense" {
 		return utils.CreateError("transaction type can be income or expense only")
 	}
-
+	if transactionData.Currency != nil {
+		if err := utils.IsValidCurrency(*transactionData.Currency); err != nil {
+			return utils.CreateError("Invalid Currency Code")
+		}
+	}
 	return nil
 }
 
@@ -56,6 +63,7 @@ func CreateTransaction(c *gin.Context, transactionData helpers.TransactionData, 
 		UserID:          userID,
 		TransactionType: transactionData.TransactionType,
 		Amount:          transactionData.Amount,
+		Currency:        transactionData.Currency,
 	}
 
 	switch transactionData.TransactionType {
@@ -134,6 +142,12 @@ func UpdateExistingTransaction(c *gin.Context, existingTransaction *models.Trans
 	}
 	if transactionData.TransactionType != nil {
 		existingTransaction.TransactionType = *transactionData.TransactionType
+	}
+	if transactionData.Currency != nil {
+		if err := utils.IsValidCurrency(*transactionData.Currency); err != nil {
+			return utils.CreateError("Invalid Currency Code")
+		}
+		existingTransaction.Currency = *transactionData.Currency
 	}
 	if err := dbhelper.GenericUpdate(existingTransaction); err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to update transaction", err)

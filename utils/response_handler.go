@@ -55,6 +55,7 @@ func CreateTransactionResponse(transaction models.Transaction) (helpers.Transact
 		Amount:             transaction.Amount,
 		TransactionType:    transaction.TransactionType,
 		TransactionPartner: &transaction.TransactionPartner.PartnerName,
+		Currency:           transaction.Currency,
 	}
 	return transactionResponse, nil
 }
