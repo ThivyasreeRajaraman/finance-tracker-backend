@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
@@ -91,7 +92,7 @@ func CheckThreshold(c *gin.Context, transaction helpers.TransactionResponse, use
 
 func CalculateTotalAmounts(c *gin.Context) error {
 
-	totalAmounts := make(map[string]uint)
+	totalAmounts := make(map[string]float64)
 	userID, err := utils.GetUserID(c)
 	if err != nil {
 		return err
@@ -103,8 +104,20 @@ func CalculateTotalAmounts(c *gin.Context) error {
 		utils.HandleError(c, http.StatusBadRequest, err.Error(), nil)
 		return err
 	}
-	now := time.Now()
-	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+
+	monthStr := c.Query("month")
+	yearStr := c.Query("year")
+	month, err := strconv.Atoi(monthStr)
+	if err != nil {
+		month = int(time.Now().Month())
+	}
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		year = time.Now().Year()
+	}
+
+	// now := time.Now()
+	startOfMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 	endOfMonth := startOfMonth.AddDate(0, 1, 0).Add(-time.Nanosecond)
 
 	rows, err := initializers.DB.Model(&models.Transaction{}).
@@ -124,7 +137,7 @@ func CalculateTotalAmounts(c *gin.Context) error {
 
 	for rows.Next() {
 		var transactionType, currency string
-		var totalAmount uint
+		var totalAmount float64
 		if err := rows.Scan(&transactionType, &totalAmount, &currency); err != nil {
 			return err
 		}
@@ -144,40 +157,40 @@ func CalculateTotalAmounts(c *gin.Context) error {
 		}
 	}
 
-	// budgetRows, err := initializers.DB.Model(&models.Budgets{}).
-	// 	Select("SUM(amount), currency").
-	// 	Where("user_id = ? AND created_at >= ? AND created_at <= ?", userID, startOfMonth, endOfMonth).
-	// 	Group("currency").
-	// 	Rows()
-	// if err != nil {
-	// 	return err
-	// }
-	// defer budgetRows.Close()
+	budgetRows, err := initializers.DB.Model(&models.Budgets{}).
+		Select("SUM(amount), currency").
+		Where("user_id = ? AND created_at >= ? AND created_at <= ?", userID, startOfMonth, endOfMonth).
+		Group("currency").
+		Rows()
+	if err != nil {
+		return err
+	}
+	defer budgetRows.Close()
 
-	// for budgetRows.Next() {
-	// 	var totalBudgetAmount uint
-	// 	var currency string
-	// 	if err := budgetRows.Scan(&totalBudgetAmount, &currency); err != nil {
-	// 		return err
-	// 	}
+	for budgetRows.Next() {
+		var totalBudgetAmount float64
+		var currency string
+		if err := budgetRows.Scan(&totalBudgetAmount, &currency); err != nil {
+			return err
+		}
 
-	// 	if currency != *user.DefaultCurrency {
-	// 		convertedBudgetAmount, convErr := convertCurrency(totalBudgetAmount, currency, user.DefaultCurrency)
-	// 		if convErr != nil {
-	// 			return convErr
-	// 		}
-	// 		totalBudgetAmount = convertedBudgetAmount
-	// 	}
+		if currency != *user.DefaultCurrency {
+			convertedBudgetAmount, convErr := convertCurrency(totalBudgetAmount, currency, user.DefaultCurrency)
+			if convErr != nil {
+				return convErr
+			}
+			totalBudgetAmount = convertedBudgetAmount
+		}
 
-	// 	totalAmounts["budget"] += totalBudgetAmount
-	// }
+		totalAmounts["budget"] += totalBudgetAmount
+	}
 
 	utils.SendResponse(c, "Total fetched successfully", "transaction_total", totalAmounts)
 	return nil
 }
 
 func CalculateCategoryWiseAmounts(c *gin.Context) error {
-	totalAmounts := make(map[string]map[string]uint)
+	totalAmounts := make(map[string]map[string]float64)
 	userID, err := utils.GetUserID(c)
 	if err != nil {
 		return err
@@ -189,10 +202,24 @@ func CalculateCategoryWiseAmounts(c *gin.Context) error {
 		utils.HandleError(c, http.StatusBadRequest, err.Error(), nil)
 		return err
 	}
-	now := time.Now()
-	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+
+	monthStr := c.Query("month")
+	yearStr := c.Query("year")
+	month, err := strconv.Atoi(monthStr)
+	if err != nil {
+		month = int(time.Now().Month())
+	}
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		year = time.Now().Year()
+	}
+
+	startOfMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 	endOfMonth := startOfMonth.AddDate(0, 1, 0).Add(-time.Nanosecond)
-	totalAmounts["budget"] = make(map[string]uint)
+	// now := time.Now()
+	// startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	// endOfMonth := startOfMonth.AddDate(0, 1, 0).Add(-time.Nanosecond)
+	totalAmounts["budget"] = make(map[string]float64)
 
 	budgetAmounts, err := GetBudgetAmount(c, userID, startOfMonth, endOfMonth)
 	if err != nil {
@@ -214,21 +241,24 @@ func CalculateCategoryWiseAmounts(c *gin.Context) error {
 	defer rows.Close()
 
 	for transactionType := range utils.ValidTransactionTypes {
-		totalAmounts[transactionType] = make(map[string]uint)
+		totalAmounts[transactionType] = make(map[string]float64)
 	}
 
 	for rows.Next() {
 		var transactionType string
 		var categoryID *uint
-		var totalAmount uint
+		var totalAmount float64
 		var currency string
 		if err := rows.Scan(&transactionType, &categoryID, &totalAmount, &currency); err != nil {
 			return err
 		}
+
+		fmt.Println("data:::", transactionType, totalAmount, currency)
 		if _, ok := utils.ValidTransactionTypes[transactionType]; ok && categoryID != nil {
 			categoryName := GetCategoryName(c, categoryID)
 			if categoryName != "" {
 				if currency != *user.DefaultCurrency {
+					fmt.Println("wise:categ:", categoryName)
 					convertedAmount, convErr := convertCurrency(totalAmount, currency, user.DefaultCurrency)
 					if convErr != nil {
 						return convErr
@@ -239,7 +269,7 @@ func CalculateCategoryWiseAmounts(c *gin.Context) error {
 			}
 		}
 	}
-
+	fmt.Println("tot::", totalAmounts)
 	utils.SendResponse(c, "Total fetched successfully", "transaction_total_by_category", totalAmounts)
 	return nil
 }
@@ -254,50 +284,8 @@ func GetCategoryName(c *gin.Context, categoryID *uint) string {
 	return category.Name
 }
 
-// func GetBudgetAmount(c *gin.Context, userID uint, startOfMonth time.Time, endOfMonth time.Time) (map[string]uint, error) {
-// 	budgetAmounts := make(map[string]uint)
-// 	rows, err := initializers.DB.Model(&models.Budgets{}).
-// 		Select("category_id, SUM(amount) as total_amount, currency").
-// 		Where("user_id = ? AND created_at >= ? AND created_at <= ?", userID, startOfMonth, endOfMonth).
-// 		Group("category_id, currency").
-// 		Rows()
-// 	if err != nil {
-// 		return budgetAmounts, err
-// 	}
-// 	defer rows.Close()
-
-// 	for rows.Next() {
-// 		var categoryID uint
-// 		var totalAmount uint
-// 		var currency string
-// 		userInterface, _ := c.Get("currentUser")
-// 		user, ok := userInterface.(models.User)
-// 		if !ok {
-// 			err := utils.CreateError("invalid user data")
-// 			utils.HandleError(c, http.StatusBadRequest, err.Error(), nil)
-// 			return nil, err
-// 		}
-// 		if err := rows.Scan(&categoryID, &totalAmount, &currency); err != nil {
-// 			return budgetAmounts, err
-// 		}
-// 		categoryName := GetCategoryName(c, &categoryID)
-// 		if categoryName != "" {
-// 			if currency != *user.DefaultCurrency {
-// 				convertedAmount, convErr := convertCurrency(totalAmount, currency, user.DefaultCurrency)
-// 				if convErr != nil {
-// 					return budgetAmounts, convErr
-// 				}
-// 				totalAmount = convertedAmount
-// 			}
-// 			budgetAmounts[categoryName] = totalAmount
-// 		}
-// 	}
-
-// 	return budgetAmounts, nil
-// }
-
-func GetBudgetAmount(c *gin.Context, userID uint, startOfMonth time.Time, endOfMonth time.Time) (map[string]uint, error) {
-	budgetAmounts := make(map[string]uint)
+func GetBudgetAmount(c *gin.Context, userID uint, startOfMonth time.Time, endOfMonth time.Time) (map[string]float64, error) {
+	budgetAmounts := make(map[string]float64)
 
 	rows, err := initializers.DB.Model(&models.Budgets{}).
 		Select("category_id, SUM(amount) as total_amount, currency").
@@ -319,7 +307,7 @@ func GetBudgetAmount(c *gin.Context, userID uint, startOfMonth time.Time, endOfM
 
 	for rows.Next() {
 		var categoryID uint
-		var totalAmount uint
+		var totalAmount float64
 		var currency string
 		if err := rows.Scan(&categoryID, &totalAmount, &currency); err != nil {
 			return budgetAmounts, err
@@ -330,11 +318,12 @@ func GetBudgetAmount(c *gin.Context, userID uint, startOfMonth time.Time, endOfM
 				budgetAmounts[categoryName] = 0
 			}
 			if currency != *user.DefaultCurrency {
+				fmt.Println("budget:categ:", categoryName)
 				convertedAmount, convErr := convertCurrency(totalAmount, currency, user.DefaultCurrency)
 				if convErr != nil {
 					return budgetAmounts, convErr
 				}
-				totalAmount = uint(convertedAmount)
+				totalAmount = convertedAmount
 			}
 			budgetAmounts[categoryName] += totalAmount
 		}
@@ -343,16 +332,11 @@ func GetBudgetAmount(c *gin.Context, userID uint, startOfMonth time.Time, endOfM
 	return budgetAmounts, nil
 }
 
-func convertCurrency(amount uint, currency string, defaultCurrency *string) (uint, error) {
+func convertCurrency(amount float64, currency string, defaultCurrency *string) (float64, error) {
 	apiKey := "93umfet0jubnfrs7dem1gju1bm5a0q1g8j4k63989o86co1jk7n33o"
-	convertURL := fmt.Sprintf("https://anyapi.io/api/v1/exchange/convert?apiKey=%s&base=%s&to=%s&amount=%d", apiKey, currency, *defaultCurrency, amount)
+	convertURL := fmt.Sprintf("https://anyapi.io/api/v1/exchange/convert?apiKey=%s&base=%s&to=%s&amount=%d", apiKey, currency, *defaultCurrency, uint(amount))
 	fmt.Println("args:base:", currency, "to:", *defaultCurrency, "amount:", amount)
 	fmt.Println("url:", convertURL)
-	resp, err := http.Get(convertURL)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
 
 	var result struct {
 		Base            string  `json:"base"`
@@ -362,11 +346,46 @@ func convertCurrency(amount uint, currency string, defaultCurrency *string) (uin
 		Rate            float64 `json:"rate"`
 		LatestUpdate    int64   `json:"latestUpdate"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return 0, err
-	}
-	fmt.Println("convAmount:", result.ConvertedAmount)
-	fmt.Println("convAmount:", uint(result.ConvertedAmount))
 
-	return uint(result.ConvertedAmount), nil
+	maxRetries := 3
+	retryDelay := time.Second
+
+	for retries := 0; retries < maxRetries; retries++ {
+		resp, err := http.Get(convertURL)
+		if err != nil {
+			return 0, fmt.Errorf("failed to make API request: %w", err)
+		}
+
+		if resp.StatusCode == http.StatusTooManyRequests {
+			fmt.Println("Rate limit exceeded. Retrying...")
+			resp.Body.Close() // Close the response body before retrying
+			time.Sleep(retryDelay)
+			retryDelay *= 2
+			continue
+		}
+
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return 0, fmt.Errorf("API request failed with status: %s", resp.Status)
+		}
+
+		fmt.Println("resp::::", resp)
+		fmt.Println("body::", resp.Body)
+
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+			return 0, fmt.Errorf("failed to decode API response: %w", err)
+		}
+
+		if result.ConvertedAmount == 0 {
+			return 0, fmt.Errorf("API returned zero converted amount, result: %+v", result)
+		}
+
+		fmt.Println("convAmount:", result.ConvertedAmount, result)
+		fmt.Println("convAmount:", uint(result.ConvertedAmount))
+
+		return result.ConvertedAmount, nil
+	}
+
+	return 0, fmt.Errorf("failed to convert currency after %d attempts", maxRetries)
 }
