@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -107,6 +108,7 @@ func CalculateTotalAmounts(c *gin.Context) error {
 
 	monthStr := c.Query("month")
 	yearStr := c.Query("year")
+	fmt.Println("month,year:", monthStr, yearStr)
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
 		month = int(time.Now().Month())
@@ -333,7 +335,7 @@ func GetBudgetAmount(c *gin.Context, userID uint, startOfMonth time.Time, endOfM
 }
 
 func convertCurrency(amount float64, currency string, defaultCurrency *string) (float64, error) {
-	apiKey := "93umfet0jubnfrs7dem1gju1bm5a0q1g8j4k63989o86co1jk7n33o"
+	apiKey := os.Getenv("API_KEY")
 	convertURL := fmt.Sprintf("https://anyapi.io/api/v1/exchange/convert?apiKey=%s&base=%s&to=%s&amount=%d", apiKey, currency, *defaultCurrency, uint(amount))
 	fmt.Println("args:base:", currency, "to:", *defaultCurrency, "amount:", amount)
 	fmt.Println("url:", convertURL)
