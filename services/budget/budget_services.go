@@ -1,6 +1,7 @@
 package budgetservices
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
@@ -9,6 +10,7 @@ import (
 	dbhelper "github.com/Thivyasree-Rajaraman/finance-tracker/helpers/query/common"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/initializers"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/models"
+	transactionservices "github.com/Thivyasree-Rajaraman/finance-tracker/services/transaction"
 	"github.com/Thivyasree-Rajaraman/finance-tracker/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -85,6 +87,11 @@ func CreateBudgets(c *gin.Context, budgetData []helpers.BudgetData, userID uint)
 			Threshold:  *data.Threshold,
 			Currency:   data.Currency,
 		}
+		convertedAmount, err := transactionservices.GetConvertedCurrency(c, *data.Amount, data.Currency)
+		if err != nil {
+			return utils.CreateError(fmt.Sprintf("Currency conversion failed: %v", err))
+		}
+		budget.ConvertedAmount = uint(convertedAmount)
 		if err := Create(c, &budget); err != nil {
 			return err
 		}
@@ -128,6 +135,11 @@ func UpdateExistingBudget(c *gin.Context, existingBudget *models.Budgets, budget
 	}
 	if budgetData.Amount != nil {
 		existingBudget.Amount = *budgetData.Amount
+		convertedAmount, err := transactionservices.GetConvertedCurrency(c, *budgetData.Amount, existingBudget.Currency)
+		if err != nil {
+			return utils.CreateError(fmt.Sprintf("Currency conversion failed: %v", err))
+		}
+		existingBudget.ConvertedAmount = uint(convertedAmount)
 	}
 	if budgetData.Threshold != nil {
 		existingBudget.Threshold = *budgetData.Threshold

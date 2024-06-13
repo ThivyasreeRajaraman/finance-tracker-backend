@@ -17,15 +17,16 @@ func CreateBudgetResponse(budgets []models.Budgets) ([]helpers.BudgetResponse, e
 	for _, budget := range budgets {
 
 		budgetResponse := helpers.BudgetResponse{
-			ID:           budget.ID,
-			UserID:       budget.UserID,
-			Name:         budget.User.Name,
-			Email:        budget.User.Email,
-			CategoryID:   budget.CategoryID,
-			CategoryName: budget.Category.Name,
-			Amount:       budget.Amount,
-			Threshold:    budget.Threshold,
-			Currency:     budget.Currency,
+			ID:              budget.ID,
+			UserID:          budget.UserID,
+			Name:            budget.User.Name,
+			Email:           budget.User.Email,
+			CategoryID:      budget.CategoryID,
+			CategoryName:    budget.Category.Name,
+			Amount:          budget.Amount,
+			Threshold:       budget.Threshold,
+			Currency:        budget.Currency,
+			ConvertedAmount: budget.ConvertedAmount,
 		}
 		budgetResponses = append(budgetResponses, budgetResponse)
 	}
@@ -36,8 +37,8 @@ func CreateTransactionResponse(transaction models.Transaction) (helpers.Transact
 
 	var defaultCurrency string
 	var categoryID uint
-	if transaction.CategoryID != nil {
-		categoryID = *transaction.CategoryID
+	if transaction.CategoryID != Zero {
+		categoryID = transaction.CategoryID
 	}
 	if transaction.User.DefaultCurrency != nil {
 		defaultCurrency = *transaction.User.DefaultCurrency
@@ -53,6 +54,7 @@ func CreateTransactionResponse(transaction models.Transaction) (helpers.Transact
 		TransactionType:    transaction.TransactionType,
 		TransactionPartner: &transaction.TransactionPartner.PartnerName,
 		Currency:           transaction.Currency,
+		ConvertedAmount:    transaction.ConvertedAmount,
 	}
 	return transactionResponse, nil
 }
