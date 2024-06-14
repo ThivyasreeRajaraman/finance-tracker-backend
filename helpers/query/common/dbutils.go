@@ -19,7 +19,7 @@ func GenericDelete[T any](model *T) error {
 	return initializers.DB.Delete(&model).Error
 }
 
-func FetchDataWithPagination[T any](model *T, page, limit int, conditions map[string]interface{}, notEqualConditions map[string]interface{}, orderBy string) ([]T, int, error) {
+func FetchDataWithPagination[T any](model *T, page, limit int, conditions, notEqualConditions, greaterThanConditions, lesserThanConditions map[string]interface{}, orderBy string) ([]T, int, error) {
 	offset := (page - 1) * limit
 
 	var data []T
@@ -31,6 +31,14 @@ func FetchDataWithPagination[T any](model *T, page, limit int, conditions map[st
 
 	for key, value := range notEqualConditions {
 		db = db.Where(key+" != ?", value)
+	}
+
+	for key, value := range greaterThanConditions {
+		db = db.Where(key+" > ?", value)
+	}
+
+	for key, value := range lesserThanConditions {
+		db = db.Where(key+" < ?", value)
 	}
 
 	if orderBy != "" {
@@ -56,6 +64,17 @@ func FetchDataWithPagination[T any](model *T, page, limit int, conditions map[st
 	countDB := initializers.DB.Model(model)
 	for key, value := range conditions {
 		countDB = countDB.Where(key, value)
+	}
+	for key, value := range notEqualConditions {
+		countDB = countDB.Where(key+" != ?", value)
+	}
+
+	for key, value := range greaterThanConditions {
+		countDB = countDB.Where(key+" > ?", value)
+	}
+
+	for key, value := range lesserThanConditions {
+		countDB = countDB.Where(key+" < ?", value)
 	}
 	if err := countDB.Count(&totalCount).Error; err != nil {
 		return nil, 0, err

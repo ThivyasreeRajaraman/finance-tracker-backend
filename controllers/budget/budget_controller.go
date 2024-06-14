@@ -67,7 +67,7 @@ func (controller *BudgetController) Fetch(c *gin.Context) {
 	conditions := map[string]interface{}{
 		"user_id": userID,
 	}
-	if data := utils.List(c, budgetModel, conditions, nil, "id ASC"); data != nil {
+	if data := utils.List(c, budgetModel, conditions, nil, nil, nil, "id ASC"); data != nil {
 		return
 	}
 }

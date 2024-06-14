@@ -116,7 +116,7 @@ func (controller *TransactionController) Fetch(c *gin.Context) {
 	if transactionType == "expense" {
 		conditions["transaction_type"] = []string{"expense", "recurringExpense"}
 	}
-	if data := utils.List(c, transactionModel, conditions, nil, "created_at DESC"); data != nil {
+	if data := utils.List(c, transactionModel, conditions, nil, nil, nil, "created_at DESC"); data != nil {
 		return
 	}
 }
