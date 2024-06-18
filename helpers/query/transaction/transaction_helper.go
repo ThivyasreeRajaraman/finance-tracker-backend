@@ -29,6 +29,7 @@ func FetchByID(c *gin.Context, transaction *models.Transaction, transactionId ui
 	}
 	return nil
 }
+
 func HandleIncomeExpenseTransaction(userID uint, transaction *models.Transaction, transactionData helpers.TransactionData) error {
 	if transactionData.CategoryName == nil || *transactionData.CategoryName == "" {
 		return utils.CreateError("Category name is required for income/expense transactions")
@@ -66,6 +67,19 @@ func HandleLendBorrowTransaction(userID uint, transaction *models.Transaction, t
 	return nil
 }
 
+func FetchTransactionByID(c *gin.Context, transaction *models.Transaction, transactionId uint) error {
+	userID, err := utils.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	if err := initializers.DB.Preload("Category").Preload("TransactionPartner").Where("user_id = ?", userID).First(&transaction, transactionId).Error; err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to retrieve existing transaction", err)
+		return err
+	}
+	return nil
+}
+
 func CheckThreshold(c *gin.Context, transaction helpers.TransactionResponse, userID uint) string {
 	var totalAmount uint
 	var budget models.Budgets
@@ -75,18 +89,22 @@ func CheckThreshold(c *gin.Context, transaction helpers.TransactionResponse, use
 
 	if err := initializers.DB.
 		Model(&models.Transaction{}).
-		Select("SUM(amount) as totalAmount").
+		Select("SUM(converted_amount) as totalAmount").
 		Where("user_id = ? AND category_id = ? AND transaction_type = ? AND created_at BETWEEN ? AND ?", userID, transaction.CategoryID, "expense", startOfMonth, endOfMonth).
 		Scan(&totalAmount).Error; err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to retrieve transactions", err)
 	}
 
+	fmt.Println("tot:amount::", totalAmount)
+
 	err := initializers.DB.Model(&models.Budgets{}).
 		Where("user_id = ? AND category_id = ?", userID, transaction.CategoryID).First(&budget).Error
 	if err == nil {
-		if totalAmount+transaction.Amount > budget.Threshold {
+		if totalAmount >= budget.ConvertedThreshold {
+			fmt.Println("reachedd")
 			return "Expense threshold reached for this category"
 		}
+		fmt.Println("not reachedd")
 	}
 	return ""
 }

@@ -92,6 +92,12 @@ func CreateBudgets(c *gin.Context, budgetData []helpers.BudgetData, userID uint)
 			return utils.CreateError(fmt.Sprintf("Currency conversion failed: %v", err))
 		}
 		budget.ConvertedAmount = uint(convertedAmount)
+
+		convertedThreshold, err := transactionservices.GetConvertedCurrency(c, *data.Threshold, data.Currency)
+		if err != nil {
+			return utils.CreateError(fmt.Sprintf("Currency conversion failed: %v", err))
+		}
+		budget.ConvertedThreshold = uint(convertedThreshold)
 		if err := Create(c, &budget); err != nil {
 			return err
 		}
@@ -143,6 +149,11 @@ func UpdateExistingBudget(c *gin.Context, existingBudget *models.Budgets, budget
 	}
 	if budgetData.Threshold != nil {
 		existingBudget.Threshold = *budgetData.Threshold
+		convertedThreshold, err := transactionservices.GetConvertedCurrency(c, *budgetData.Threshold, existingBudget.Currency)
+		if err != nil {
+			return utils.CreateError(fmt.Sprintf("Currency conversion failed: %v", err))
+		}
+		existingBudget.ConvertedThreshold = uint(convertedThreshold)
 	}
 
 	existingBudget.Currency = budgetData.Currency

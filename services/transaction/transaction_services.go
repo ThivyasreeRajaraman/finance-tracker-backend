@@ -148,6 +148,13 @@ func FetchTransactionById(c *gin.Context, transaction *models.Transaction, trans
 	return nil
 }
 
+func FetchSingleTransactionById(c *gin.Context, transaction *models.Transaction, transactionId uint) error {
+	if err := transactionhelpers.FetchTransactionByID(c, transaction, transactionId); err != nil {
+		return err
+	}
+	return nil
+}
+
 func preloadTransactionAssociations(c *gin.Context, transaction *models.Transaction) error {
 	if err := initializers.DB.Preload("Category").Preload("User").Preload("TransactionPartner").First(transaction, transaction.ID).Error; err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to preload user and category association", err)
@@ -189,7 +196,6 @@ func UpdateExistingTransaction(c *gin.Context, existingTransaction *models.Trans
 	}
 	if transactionData.Amount != nil {
 		if existingTransaction.TransactionType == "expense" {
-			// transactionhelpers.CheckThreshold(c, transactionResponse, userID)
 			alert := transactionhelpers.CheckThreshold(c, transactionResponse, userID)
 			if alert != "" {
 				c.JSON(http.StatusOK, gin.H{
