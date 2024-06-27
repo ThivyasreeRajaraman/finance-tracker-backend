@@ -8,6 +8,7 @@ import (
 func SetupTransactionPartnerRoutes(router *gin.RouterGroup) {
 	controller := transactionpartnercontrollers.GetPartnerControllerInstance()
 	router.POST("/user/transactionpartner", controller.FetchOrCreate)
-	router.GET("/user/transactionpartner", controller.Fetch)
+	router.GET("/user/transactionpartner/:transactionType", controller.Fetch)
+	router.GET("/user/transactionpartner", controller.FetchPartners)
 	router.GET("/user/lendOrBorrowDuedate/reminder", controller.Remind)
 }

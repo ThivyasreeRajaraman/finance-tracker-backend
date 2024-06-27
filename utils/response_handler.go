@@ -81,7 +81,7 @@ func CreatePartnerResponse(partners []models.TransactionPartner) ([]helpers.Tran
 	return partnerResponses, nil
 }
 
-func List[T any](c *gin.Context, model *T, conditions, unequalConditions map[string]interface{}, orderBy string) []T {
+func List[T any](c *gin.Context, model *T, conditions, unequalConditions, greaterThanConditions, lesserThanConditions map[string]interface{}, orderBy string) []T {
 	page, err := strconv.Atoi(c.Query("pageNumber"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -92,7 +92,7 @@ func List[T any](c *gin.Context, model *T, conditions, unequalConditions map[str
 		limit = 10
 	}
 
-	data, totalCount, err := dbhelper.FetchDataWithPagination(model, page, limit, conditions, unequalConditions, orderBy)
+	data, totalCount, err := dbhelper.FetchDataWithPagination(model, page, limit, conditions, unequalConditions, greaterThanConditions, lesserThanConditions, orderBy)
 	if err != nil {
 		HandleError(c, http.StatusInternalServerError, "Failed to fetch data", err)
 		return nil

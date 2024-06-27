@@ -69,7 +69,7 @@ func FetchAll(c *gin.Context, partners *[]models.TransactionPartner) error {
 	if err != nil {
 		return err
 	}
-	if err := initializers.DB.Where("user_id = ?", userID).Find(&partners).Error; err != nil {
+	if err := initializers.DB.Select("partner_name").Where("user_id = ?", userID).Order("partner_name ASC").Find(&partners).Error; err != nil {
 		return err
 	}
 	return nil

@@ -15,6 +15,7 @@ type PartnerController struct{}
 type PartnerControllerInterface interface {
 	FetchOrCreate(c *gin.Context)
 	Fetch(c *gin.Context)
+	FetchPartners(c *gin.Context)
 	Remind(c *gin.Context)
 }
 
@@ -47,15 +48,46 @@ func (controller *PartnerController) Fetch(c *gin.Context) {
 
 	partnerModel := new(models.TransactionPartner)
 	userID, err := utils.GetUserID(c)
+	transactionType := c.Param("transactionType")
 	if err != nil {
 		return
 	}
 	conditions := map[string]interface{}{
 		"user_id": userID,
 	}
-	if data := utils.List(c, partnerModel, conditions, nil, "id ASC"); data != nil {
+	var greaterThanConditions, lesserThanConditions, unequalThanConditions map[string]interface{}
+	switch transactionType {
+	case "lend":
+		lesserThanConditions = map[string]interface{}{
+			"closing_balance": 0,
+		}
+	case "borrow":
+		greaterThanConditions = map[string]interface{}{
+			"closing_balance": 0,
+		}
+	case "all":
+		unequalThanConditions = map[string]interface{}{
+			"closing_balance": 0,
+		}
+	default:
 		return
 	}
+	if data := utils.List(c, partnerModel, conditions, unequalThanConditions, greaterThanConditions, lesserThanConditions, "due_date ASC"); data != nil {
+		return
+	}
+}
+
+func (controller *PartnerController) FetchPartners(c *gin.Context) {
+
+	partners, err := transactionpartnerservice.Fetch(c)
+	if err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch partners", err)
+	}
+	partnerNames := make([]string, len(partners))
+	for i, partner := range partners {
+		partnerNames[i] = partner.PartnerName
+	}
+	utils.SendResponse(c, "Transaction partners fetched successfully", "partners", partnerNames)
 }
 
 func (controller *PartnerController) Remind(c *gin.Context) {
