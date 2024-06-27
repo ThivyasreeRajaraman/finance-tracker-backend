@@ -14,4 +14,5 @@ type Transaction struct {
 	Amount               uint               `json:"amount"`
 	TransactionPartnerID *uint              `json:"transaction_partner_id"`
 	TransactionPartner   TransactionPartner `gorm:"foreignkey:TransactionPartnerID;association_foreignkey:TransactionPartnerID"`
+	Currency             string             `json:"currency"`
 }

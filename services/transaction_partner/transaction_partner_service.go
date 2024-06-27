@@ -28,12 +28,9 @@ func UnmarshalAndValidate(c *gin.Context, transactionPartnerData *helpers.Transa
 func GetOrCreatePartner(userID uint, partnerName *string) ([]helpers.TransactionPartnerResponse, error) {
 	var partner *models.TransactionPartner
 	var err error
-	partner, err = transactionpartnerhelper.Fetch(userID, partnerName)
+	partner, err = transactionpartnerhelper.FetchOrCreate(userID, partnerName)
 	if err != nil {
-		partner, err = transactionpartnerhelper.Create(userID, partnerName)
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 	partners := []models.TransactionPartner{*partner}
 	partnerResponse, err := utils.CreatePartnerResponse(partners)
@@ -65,7 +62,12 @@ func NotifyUpcomingDueDate(c *gin.Context) {
 	}
 	var reminders []string
 	for _, transaction := range upcomingLendOrBorrowTransactions {
-		daysUntilExpense := int(time.Until(transaction.DueDate).Hours() / 24)
+		formattedDate, err := time.Parse("2006-01-02", transaction.DueDate)
+		if err != nil {
+			utils.HandleError(c, http.StatusInternalServerError, "Failed to parse next expense date", err)
+			continue
+		}
+		daysUntilExpense := int(time.Until(formattedDate).Hours() / 24)
 		if daysUntilExpense <= 5 {
 			reminders = append(reminders, sendLendOrBorrowReminder(transaction, daysUntilExpense))
 		}

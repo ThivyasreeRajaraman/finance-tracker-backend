@@ -14,9 +14,10 @@ type BudgetController struct{}
 
 type BudgetControllerInterface interface {
 	Create(c *gin.Context)
-	Fetch(c *gin.Context, createdSuccessfully bool)
+	Fetch(c *gin.Context)
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
+	UnitFetch(c *gin.Context)
 }
 
 func GetBudgetControllerInstance() BudgetControllerInterface {
@@ -39,21 +40,14 @@ func (controller *BudgetController) Create(c *gin.Context) {
 		return
 	}
 
-	controller.Fetch(c, true)
+	controller.FetchCreatedBudget(c)
 }
 
-func (controller *BudgetController) Fetch(c *gin.Context, createdSuccessfully bool) {
+func (controller *BudgetController) FetchCreatedBudget(c *gin.Context) {
 
 	var budgets []models.Budgets
 	if err := budgetservices.Fetch(c, &budgets); err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to fetch budget", err)
-	}
-
-	var message string
-	if createdSuccessfully {
-		message = "Budget created successfully"
-	} else {
-		message = "Budget retrieved successfully"
 	}
 
 	budgetResponses, err := utils.CreateBudgetResponse(budgets)
@@ -61,7 +55,21 @@ func (controller *BudgetController) Fetch(c *gin.Context, createdSuccessfully bo
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to construct budget response", err)
 	}
 
-	utils.SendResponse(c, message, "budget", budgetResponses)
+	utils.SendResponse(c, "Budget created successfully", "budget", budgetResponses)
+}
+
+func (controller *BudgetController) Fetch(c *gin.Context) {
+	budgetModel := new(models.Budgets)
+	userID, err := utils.GetUserID(c)
+	if err != nil {
+		return
+	}
+	conditions := map[string]interface{}{
+		"user_id": userID,
+	}
+	if data := utils.List(c, budgetModel, conditions, nil, nil, nil, "id ASC"); data != nil {
+		return
+	}
 }
 
 func (controller *BudgetController) Update(c *gin.Context) {
@@ -90,4 +98,16 @@ func (controller *BudgetController) Delete(c *gin.Context) {
 	if err := budgetservices.Delete(c, existingBudget); err != nil {
 		return
 	}
+}
+
+func (controller *BudgetController) UnitFetch(c *gin.Context) {
+	existingBudget, err := budgetservices.GetBudgetFromPathParam(c)
+	if err != nil {
+		return
+	}
+	budgetResponses, err := utils.CreateBudgetResponse([]models.Budgets{*existingBudget})
+	if err != nil {
+		utils.HandleError(c, http.StatusInternalServerError, "Failed to construct budget response", err)
+	}
+	utils.SendResponse(c, "Budget retrieved successfully", "budget", budgetResponses)
 }

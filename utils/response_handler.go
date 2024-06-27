@@ -15,20 +15,17 @@ import (
 func CreateBudgetResponse(budgets []models.Budgets) ([]helpers.BudgetResponse, error) {
 	budgetResponses := make([]helpers.BudgetResponse, 0)
 	for _, budget := range budgets {
-		var defaultCurrency string
-		if budget.User.DefaultCurrency != nil {
-			defaultCurrency = *budget.User.DefaultCurrency
-		}
+
 		budgetResponse := helpers.BudgetResponse{
-			ID:              budget.ID,
-			UserID:          budget.UserID,
-			Name:            budget.User.Name,
-			Email:           budget.User.Email,
-			DefaultCurrency: defaultCurrency,
-			CategoryID:      budget.CategoryID,
-			CategoryName:    budget.Category.Name,
-			Amount:          budget.Amount,
-			Threshold:       budget.Threshold,
+			ID:           budget.ID,
+			UserID:       budget.UserID,
+			Name:         budget.User.Name,
+			Email:        budget.User.Email,
+			CategoryID:   budget.CategoryID,
+			CategoryName: budget.Category.Name,
+			Amount:       budget.Amount,
+			Threshold:    budget.Threshold,
+			Currency:     budget.Currency,
 		}
 		budgetResponses = append(budgetResponses, budgetResponse)
 	}
@@ -55,6 +52,7 @@ func CreateTransactionResponse(transaction models.Transaction) (helpers.Transact
 		Amount:             transaction.Amount,
 		TransactionType:    transaction.TransactionType,
 		TransactionPartner: &transaction.TransactionPartner.PartnerName,
+		Currency:           transaction.Currency,
 	}
 	return transactionResponse, nil
 }
@@ -81,7 +79,7 @@ func CreatePartnerResponse(partners []models.TransactionPartner) ([]helpers.Tran
 	return partnerResponses, nil
 }
 
-func List[T any](c *gin.Context, model *T, conditions map[string]interface{}) []T {
+func List[T any](c *gin.Context, model *T, conditions, unequalConditions, greaterThanConditions, lesserThanConditions map[string]interface{}, orderBy string) []T {
 	page, err := strconv.Atoi(c.Query("pageNumber"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -92,7 +90,7 @@ func List[T any](c *gin.Context, model *T, conditions map[string]interface{}) []
 		limit = 10
 	}
 
-	data, totalCount, err := dbhelper.FetchDataWithPagination(model, page, limit, conditions)
+	data, totalCount, err := dbhelper.FetchDataWithPagination(model, page, limit, conditions, unequalConditions, greaterThanConditions, lesserThanConditions, orderBy)
 	if err != nil {
 		HandleError(c, http.StatusInternalServerError, "Failed to fetch data", err)
 		return nil

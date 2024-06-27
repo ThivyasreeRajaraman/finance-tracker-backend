@@ -20,3 +20,10 @@ func UpdateUser(c *gin.Context, user *models.User) error {
 	c.Set("currentUser", user)
 	return nil
 }
+
+func FetchCategories(c *gin.Context, userID uint, transactionType string) error {
+	if err := userhelper.FetchCategories(c, userID, transactionType); err != nil {
+		return err
+	}
+	return nil
+}

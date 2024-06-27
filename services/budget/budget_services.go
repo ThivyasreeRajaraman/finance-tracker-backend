@@ -31,6 +31,12 @@ func UnmarshalAndValidate(c *gin.Context, budgetData *[]helpers.BudgetData) erro
 		if d.Threshold != nil && d.Amount != nil && *d.Threshold > *d.Amount {
 			return utils.CreateError("threshold must be less than budget amount")
 		}
+		if d.Currency == "" {
+			return utils.CreateError("Currency cannot be empty")
+		}
+		if err := utils.IsValidCurrency(d.Currency); err != nil {
+			return utils.CreateError("Invalid Currency Code")
+		}
 	}
 	return nil
 }
@@ -48,13 +54,18 @@ func UnmarshalAndValidateSingleEntity(c *gin.Context, budgetData *helpers.Budget
 	if budgetData.Threshold != nil && *budgetData.Threshold <= 0 {
 		return utils.CreateError("threshold must be greater than zero")
 	}
+	if budgetData.Currency == "" {
+		return utils.CreateError("Currency cannot be empty")
+	}
+	if err := utils.IsValidCurrency(budgetData.Currency); err != nil {
+		return utils.CreateError("Invalid Currency Code")
+	}
 	return nil
 }
 
 func GetOrCreateCategory(c *gin.Context, userID uint, categoryName *string, transactionType string) (*models.Categories, error) {
 	category, err := categoryhelpers.GetOrCreateCategory(userID, categoryName, transactionType)
 	if err != nil {
-		utils.HandleError(c, http.StatusInternalServerError, "Failed to get or create category", err)
 		return nil, err
 	}
 	return category, nil
@@ -72,6 +83,7 @@ func CreateBudgets(c *gin.Context, budgetData []helpers.BudgetData, userID uint)
 			CategoryID: category.ID,
 			Amount:     *data.Amount,
 			Threshold:  *data.Threshold,
+			Currency:   data.Currency,
 		}
 		if err := Create(c, &budget); err != nil {
 			return err
@@ -120,6 +132,8 @@ func UpdateExistingBudget(c *gin.Context, existingBudget *models.Budgets, budget
 	if budgetData.Threshold != nil {
 		existingBudget.Threshold = *budgetData.Threshold
 	}
+
+	existingBudget.Currency = budgetData.Currency
 
 	if err := dbhelper.GenericUpdate(existingBudget); err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to update budget", err)

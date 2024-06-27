@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UpdateTransactionPartnerAmount(id uint, transactionType string, amount uint, duedate *time.Time) error {
+func UpdateTransactionPartnerAmount(id uint, transactionType string, amount uint, duedate *string) error {
 	var partner models.TransactionPartner
 	if err := initializers.DB.Where("id = ?", id).First(&partner).Error; err != nil {
 		return utils.CreateError("Failed to find partner")
@@ -35,11 +35,18 @@ func UpdateTransactionPartnerAmount(id uint, transactionType string, amount uint
 	return nil
 }
 
-func Fetch(userID uint, partnerName *string) (*models.TransactionPartner, error) {
+func FetchOrCreate(userID uint, partnerName *string) (*models.TransactionPartner, error) {
 	var partner models.TransactionPartner
 	err := initializers.DB.Where("user_id = ? AND LOWER(partner_name) = ?", userID, strings.ToLower(*partnerName)).First(&partner).Error
 	if err != nil {
-		return nil, err
+		newPartner := models.TransactionPartner{
+			PartnerName: *partnerName,
+			UserID:      userID,
+		}
+		if err = dbhelper.GenericCreate(&newPartner); err != nil {
+			return nil, err
+		}
+		return &newPartner, nil
 	}
 	return &partner, nil
 }
@@ -48,7 +55,7 @@ func Create(userID uint, partnerName *string) (*models.TransactionPartner, error
 	partner := models.TransactionPartner{
 		PartnerName:    *partnerName,
 		UserID:         userID,
-		DueDate:        time.Now(),
+		DueDate:        time.Now().Format("2006-01-02"),
 		ClosingBalance: 0,
 	}
 	if err := dbhelper.GenericCreate(&partner); err != nil {
@@ -62,7 +69,7 @@ func FetchAll(c *gin.Context, partners *[]models.TransactionPartner) error {
 	if err != nil {
 		return err
 	}
-	if err := initializers.DB.Where("user_id = ?", userID).Find(&partners).Error; err != nil {
+	if err := initializers.DB.Select("partner_name").Where("user_id = ?", userID).Order("partner_name ASC").Find(&partners).Error; err != nil {
 		return err
 	}
 	return nil

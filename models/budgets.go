@@ -10,6 +10,7 @@ type Budgets struct {
 	Category   Categories `gorm:"foreignkey:CategoryID;association_foreignkey:CategoryID"`
 	Amount     uint       `json:"amount"`
 	Threshold  uint       `json:"threshold"`
+	Currency   string     `json:"currency"`
 }
 
 func MigrateBudgets(db *gorm.DB) error {

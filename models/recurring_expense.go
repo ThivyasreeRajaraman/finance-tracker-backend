@@ -1,8 +1,6 @@
 package models
 
 import (
-	"time"
-
 	"gorm.io/gorm"
 )
 
@@ -14,7 +12,9 @@ type RecurringExpense struct {
 	Category        Categories `gorm:"foreignkey:CategoryID;association_foreignkey:CategoryID"`
 	Amount          uint       `json:"amount"`
 	Frequency       string     `json:"frequency"`
-	NextExpenseDate time.Time  `json:"next_expense_date" gorm:"type:date"`
+	NextExpenseDate string     `json:"next_expense_date"`
+	Currency        string     `json:"currency"`
+	Active          bool       `json:"active"`
 }
 
 func MigrateRecurringExpense(db *gorm.DB) error {
@@ -23,5 +23,10 @@ func MigrateRecurringExpense(db *gorm.DB) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (r *RecurringExpense) BeforeCreate(tx *gorm.DB) (err error) {
+	r.Active = true
 	return nil
 }

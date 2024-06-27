@@ -9,18 +9,27 @@ import (
 	"github.com/Thivyasree-Rajaraman/finance-tracker/routes"
 )
 
+func ApplyCorsConfig(router *gin.Engine) {
+	corsConfig := cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"*"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}
+	router.Use(cors.New(corsConfig))
+}
+
 func main() {
 	r := gin.Default()
-	r.Use(cors.Default())
-	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"*"}
-	config.AllowCredentials = true
-	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Authorization", "Content-Type"}
-	r.Use(cors.New(config))
+
+	// Apply CORS configuration
+	ApplyCorsConfig(r)
 
 	// Setup routes
 	routes.SetupRoutes(r)
+
+	// Start the server
 	if err := r.Run(); err != nil {
 		log.Fatal("Server failed to start: ", err)
 	}
