@@ -9,7 +9,7 @@ import (
 
 func UpdateUser(c *gin.Context, user *models.User) error {
 	// validate currency code
-	if err := utils.IsValidCurrency(*user.DefaultCurrency); err != nil {
+	if err := utils.IsValidCurrency(user.DefaultCurrency); err != nil {
 		return err
 	}
 	if err := userhelper.Update(user); err != nil {

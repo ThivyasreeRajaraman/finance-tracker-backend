@@ -28,7 +28,7 @@ var _ = Describe("Create Transaction", func() {
 		mockUserData = models.User{
 			Email:           "testuser@example.com",
 			Name:            "TestUser",
-			DefaultCurrency: &currency,
+			DefaultCurrency: currency,
 		}
 		initializers.DB.Create(&mockUserData)
 		mockPartnerData = models.TransactionPartner{
@@ -75,7 +75,7 @@ var _ = Describe("Create Transaction", func() {
 			Expect(transaction["name"]).To(Equal(mockUserData.Name))
 			Expect(transaction["category_name"]).To(Equal(*transactionParams.CategoryName))
 			Expect(uint(transaction["amount"].(float64))).To(Equal(transactionParams.Amount))
-			Expect(transaction["default_currency"]).To(Equal(*mockUserData.DefaultCurrency))
+			Expect(transaction["default_currency"]).To(Equal(mockUserData.DefaultCurrency))
 
 		})
 	})
@@ -114,7 +114,7 @@ var _ = Describe("Create Transaction", func() {
 			Expect(transaction["name"]).To(Equal(mockUserData.Name))
 			Expect(transaction["transaction_partner"]).To(Equal(*transactionParams.TransactionPartner))
 			Expect(uint(transaction["amount"].(float64))).To(Equal(transactionParams.Amount))
-			Expect(transaction["default_currency"]).To(Equal(*mockUserData.DefaultCurrency))
+			Expect(transaction["default_currency"]).To(Equal(mockUserData.DefaultCurrency))
 		})
 	})
 

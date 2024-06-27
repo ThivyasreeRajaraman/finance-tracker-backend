@@ -23,6 +23,7 @@ type BudgetResponse struct {
 	Amount          uint   `json:"amount"`
 	Threshold       uint   `json:"threshold"`
 	Currency        string `json:"currency"`
+	ConvertedAmount uint   `json:"converted_amount"`
 }
 
 type TransactionData struct {
@@ -46,13 +47,13 @@ type TransactionResponse struct {
 	TransactionPartner *string `json:"transaction_partner,omitempty"`
 	PaymentDueDate     *string `json:"payment_due_date,omitempty"`
 	Currency           string  `json:"currency"`
+	ConvertedAmount    uint    `json:"converted_amount"`
 }
 
 type TransactionUpdate struct {
 	TransactionType *string `json:"transaction_type,omitempty"`
 	CategoryName    *string `json:"category_name,omitempty"`
 	Amount          *uint   `json:"amount,omitempty"`
-	Currency        *string `json:"currency,omitempty"`
 }
 
 type TransactionPartnerData struct {
@@ -72,6 +73,7 @@ type RecurringExpenseData struct {
 	Frequency       string `json:"frequency"`
 	NextExpenseDate string `json:"next_expense_date"`
 	Currency        string `json:"currency"`
+	ConvertedAmount uint   `json:"converted_amount"`
 }
 
 type UpdateRecurringExpenseData struct {
@@ -79,7 +81,6 @@ type UpdateRecurringExpenseData struct {
 	Amount          *uint   `json:"amount"`
 	Frequency       *string `json:"frequency"`
 	NextExpenseDate *string `json:"next_expense_date"`
-	Currency        *string `json:"currency"`
 	Active          *bool   `json:"active"`
 }
 
@@ -90,4 +91,5 @@ type RecurringExpenseResponse struct {
 	NextExpenseDate string `json:"next_expense_date"`
 	Currency        string `json:"currency"`
 	Active          bool   `json:"active"`
+	ConvertedAmount uint   `json:"converted_amount"`
 }

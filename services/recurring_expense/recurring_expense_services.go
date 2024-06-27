@@ -93,15 +93,6 @@ func UnmarshalAndValidateForUpdate(c *gin.Context, recurringExpenseData *helpers
 			return err
 		}
 	}
-	if recurringExpenseData.Currency != nil {
-		if *recurringExpenseData.Currency == "" {
-			return utils.CreateError("currency cannot be empty")
-		}
-		err := utils.IsValidCurrency(*recurringExpenseData.Currency)
-		if err != nil {
-			return err
-		}
-	}
 	if recurringExpenseData.NextExpenseDate != nil {
 		var formattedDate string
 		parsedDate, err := time.Parse("2006-01-02", *recurringExpenseData.NextExpenseDate)
@@ -143,9 +134,6 @@ func Update(c *gin.Context, recurringExpenseData helpers.UpdateRecurringExpenseD
 	}
 	if recurringExpenseData.NextExpenseDate != nil {
 		existingExpense.NextExpenseDate = *recurringExpenseData.NextExpenseDate
-	}
-	if recurringExpenseData.Currency != nil {
-		existingExpense.Currency = *recurringExpenseData.Currency
 	}
 	if recurringExpenseData.Active != nil {
 		existingExpense.Active = *recurringExpenseData.Active
@@ -348,7 +336,7 @@ func UpdateNextExpenseDate(c *gin.Context, existingExpense *models.RecurringExpe
 	transaction := models.Transaction{
 		UserID:          userID,
 		TransactionType: "recurringExpense",
-		CategoryID:      &existingExpense.CategoryID,
+		CategoryID:      existingExpense.CategoryID,
 		Amount:          existingExpense.Amount,
 		Currency:        existingExpense.Currency,
 	}

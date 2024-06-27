@@ -97,7 +97,7 @@ func (controller *TransactionController) FetchSingleTransaction(c *gin.Context) 
 		return
 	}
 	var transaction models.Transaction
-	transactionservices.FetchTransactionById(c, &transaction, transactionId)
+	transactionservices.FetchSingleTransactionById(c, &transaction, transactionId)
 	utils.SendResponse(c, "Transaction fetched successfully", "transaction", transaction)
 }
 

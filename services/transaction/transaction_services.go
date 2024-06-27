@@ -1,6 +1,7 @@
 package transactionservices
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Thivyasree-Rajaraman/finance-tracker/helpers"
@@ -50,12 +51,31 @@ func UnmarshalAndValidateSingleEntity(c *gin.Context, transactionData *helpers.T
 	if transactionData.TransactionType != nil && *transactionData.TransactionType != "income" && *transactionData.TransactionType != "expense" {
 		return utils.CreateError("transaction type can be income or expense only")
 	}
-	if transactionData.Currency != nil {
-		if err := utils.IsValidCurrency(*transactionData.Currency); err != nil {
-			return utils.CreateError("Invalid Currency Code")
-		}
-	}
 	return nil
+}
+
+func getDefaultCurrencyForUser(c *gin.Context) (string, error) {
+	userInterface, _ := c.Get("currentUser")
+	user, ok := userInterface.(models.User)
+	if !ok {
+		err := utils.CreateError("invalid user data")
+		utils.HandleError(c, http.StatusBadRequest, err.Error(), nil)
+		return "", err
+	}
+	return user.DefaultCurrency, nil
+}
+
+func GetConvertedCurrency(c *gin.Context, amount uint, currency string) (float64, error) {
+	defaultCurrency, err := getDefaultCurrencyForUser(c)
+	if err != nil {
+		return utils.Zero, utils.CreateError("Failed to retrieve default currency")
+	}
+
+	convertedAmount, err := transactionhelpers.ConvertCurrency(float64(amount), currency, &defaultCurrency)
+	if err != nil {
+		return utils.Zero, utils.CreateError(fmt.Sprintf("Currency conversion failed: %v", err))
+	}
+	return convertedAmount, nil
 }
 
 func CreateTransaction(c *gin.Context, transactionData helpers.TransactionData, userID uint) error {
@@ -65,6 +85,13 @@ func CreateTransaction(c *gin.Context, transactionData helpers.TransactionData, 
 		Amount:          transactionData.Amount,
 		Currency:        transactionData.Currency,
 	}
+
+	convertedAmount, err := GetConvertedCurrency(c, transactionData.Amount, transactionData.Currency)
+	if err != nil {
+		return utils.CreateError(fmt.Sprintf("Currency conversion failed: %v", err))
+	}
+
+	transaction.ConvertedAmount = uint(convertedAmount)
 
 	switch transactionData.TransactionType {
 	case "income", "expense":
@@ -121,6 +148,13 @@ func FetchTransactionById(c *gin.Context, transaction *models.Transaction, trans
 	return nil
 }
 
+func FetchSingleTransactionById(c *gin.Context, transaction *models.Transaction, transactionId uint) error {
+	if err := transactionhelpers.FetchTransactionByID(c, transaction, transactionId); err != nil {
+		return err
+	}
+	return nil
+}
+
 func preloadTransactionAssociations(c *gin.Context, transaction *models.Transaction) error {
 	if err := initializers.DB.Preload("Category").Preload("User").Preload("TransactionPartner").First(transaction, transaction.ID).Error; err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to preload user and category association", err)
@@ -134,21 +168,21 @@ func UpdateExistingTransaction(c *gin.Context, existingTransaction *models.Trans
 	if err != nil {
 		return err
 	}
-	if categoryID != 0 && existingTransaction.CategoryID != &categoryID {
-		existingTransaction.CategoryID = &categoryID
+	if categoryID != 0 && existingTransaction.CategoryID != categoryID {
+		existingTransaction.CategoryID = categoryID
 	}
 	if transactionData.Amount != nil {
 		existingTransaction.Amount = *transactionData.Amount
+		convertedAmount, err := GetConvertedCurrency(c, *transactionData.Amount, existingTransaction.Currency)
+		if err != nil {
+			return utils.CreateError(fmt.Sprintf("Currency conversion failed: %v", err))
+		}
+		existingTransaction.ConvertedAmount = uint(convertedAmount)
 	}
 	if transactionData.TransactionType != nil {
 		existingTransaction.TransactionType = *transactionData.TransactionType
 	}
-	if transactionData.Currency != nil {
-		if err := utils.IsValidCurrency(*transactionData.Currency); err != nil {
-			return utils.CreateError("Invalid Currency Code")
-		}
-		existingTransaction.Currency = *transactionData.Currency
-	}
+
 	if err := dbhelper.GenericUpdate(existingTransaction); err != nil {
 		utils.HandleError(c, http.StatusInternalServerError, "Failed to update transaction", err)
 		return err
@@ -162,7 +196,6 @@ func UpdateExistingTransaction(c *gin.Context, existingTransaction *models.Trans
 	}
 	if transactionData.Amount != nil {
 		if existingTransaction.TransactionType == "expense" {
-			// transactionhelpers.CheckThreshold(c, transactionResponse, userID)
 			alert := transactionhelpers.CheckThreshold(c, transactionResponse, userID)
 			if alert != "" {
 				c.JSON(http.StatusOK, gin.H{
