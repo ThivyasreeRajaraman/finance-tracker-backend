@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	initializers.LoadEnvVariables(true)
+	// initializers.LoadEnvVariables(true)
 	initializers.InitDB(os.Getenv("TEST_DATABASE_URL"))
 	initializers.SyncDatabase()
 }

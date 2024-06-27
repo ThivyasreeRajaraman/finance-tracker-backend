@@ -89,11 +89,11 @@ func sendLendOrBorrowReminder(transaction models.TransactionPartner, daysUntilEx
 
 	if daysUntilExpense == 0 {
 		message = fmt.Sprintf("The amount of %d %s you %s %s %s is due today.",
-			uint(math.Abs(float64(transaction.ClosingBalance))), *transaction.User.DefaultCurrency, transaction_type, adj, transaction.PartnerName)
+			uint(math.Abs(float64(transaction.ClosingBalance))), transaction.User.DefaultCurrency, transaction_type, adj, transaction.PartnerName)
 	} else {
 		fmt.Printf("data::%+v", transaction)
 		message = fmt.Sprintf("The amount of %d %s you %s %s %s is due in %d day(s).",
-			uint(math.Abs(float64(transaction.ClosingBalance))), *transaction.User.DefaultCurrency, transaction_type, adj, transaction.PartnerName, daysUntilExpense)
+			uint(math.Abs(float64(transaction.ClosingBalance))), transaction.User.DefaultCurrency, transaction_type, adj, transaction.PartnerName, daysUntilExpense)
 	}
 	return message
 }

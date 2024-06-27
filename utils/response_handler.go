@@ -40,8 +40,8 @@ func CreateTransactionResponse(transaction models.Transaction) (helpers.Transact
 	if transaction.CategoryID != Zero {
 		categoryID = transaction.CategoryID
 	}
-	if transaction.User.DefaultCurrency != nil {
-		defaultCurrency = *transaction.User.DefaultCurrency
+	if transaction.User.DefaultCurrency != "" {
+		defaultCurrency = transaction.User.DefaultCurrency
 	}
 	transactionResponse := helpers.TransactionResponse{
 		ID:                 transaction.ID,

@@ -92,6 +92,7 @@ func CheckAndCreateUser(user *models.User, userInfo map[string]interface{}) erro
 
 	user.Name = name
 	user.Email = email
+	user.DefaultCurrency = "INR"
 
 	// check if user already exists
 	if err := userhelper.SearchByEmail(user); err != nil {

@@ -20,7 +20,7 @@ var _ = Describe("Update User Data", func() {
 	var mockUserData = models.User{
 		Email:           "thivyasree.ktr@shopup.org",
 		Name:            "Sree",
-		DefaultCurrency: &currency,
+		DefaultCurrency: currency,
 	}
 	initializers.DB.Create(&mockUserData)
 

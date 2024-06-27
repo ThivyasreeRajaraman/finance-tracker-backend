@@ -62,7 +62,7 @@ func getDefaultCurrencyForUser(c *gin.Context) (string, error) {
 		utils.HandleError(c, http.StatusBadRequest, err.Error(), nil)
 		return "", err
 	}
-	return *user.DefaultCurrency, nil
+	return user.DefaultCurrency, nil
 }
 
 func GetConvertedCurrency(c *gin.Context, amount uint, currency string) (float64, error) {

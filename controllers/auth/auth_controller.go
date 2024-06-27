@@ -17,7 +17,7 @@ var googleOauthConfig = &oauth2.Config{}
 
 //nolint:gochecknoinits
 func init() {
-	initializers.LoadEnvVariables(false)
+	// initializers.LoadEnvVariables(false)
 	initializers.InitDB(os.Getenv("DATABASE_URL"))
 	initializers.SyncDatabase()
 	googleOauthConfig = &oauth2.Config{
